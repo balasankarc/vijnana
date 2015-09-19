@@ -1,0 +1,2 @@
+class DepartmentNotGivenError(Exception):
+    pass
