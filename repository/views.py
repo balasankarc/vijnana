@@ -21,10 +21,11 @@ def user_signin(request):
             print "Password", input_password
             try:
                 user = User.objects.get(username=input_username)
+                username = user.username
                 password = user.password
                 if bcrypt.hashpw(input_password, password) == password:
                     print "Success"
-                    request.session['user'] = user.username
+                    request.session['user'] = username
                     return HttpResponseRedirect('/')
                 else:
                     raise ObjectDoesNotExist
@@ -35,7 +36,8 @@ def user_signin(request):
         if 'user' in request.session.keys():
             # If user already logged in, redirect to homepage
             return HttpResponseRedirect('/')
-    return render(request, 'signin.html', {'error': error})
+    return render(request, 'signin.html',
+                  {'error': error, 'username': username})
 
 
 def user_signout(request):
