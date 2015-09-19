@@ -1,0 +1,94 @@
+<html>
+    <head>
+        {% load bootstrap3 %}
+        {% bootstrap_css %}
+        {% bootstrap_javascript %}
+        {% load staticfiles %}
+        <link rel='stylesheet' type='text/css' href={% static "css/sidebar.css" %}>
+        <link rel='stylesheet' type='text/css' href={% static "css/style.css" %}>
+    </head>
+    <body>
+        <div id='wrapper'>
+            <div id='sidebar-wrapper'>
+                <ul class='sidebar-nav'>
+                    <li>
+                        <a href='/'>
+                            <img alt="Asiet logo transparent" src={% static "images/asiet_logo_transparent.png" %} width="80%"/>
+                        </a>
+                    </li>
+                    <li class='sidebar-brand'>
+                        <a href='/' style='color:black'>Vijñāna</a>
+                    </li>
+                    <li>
+                        <a href='/'>Home</a>
+                    </li>
+                    <li>
+                        <a href="/types/Paper_Publication">Paper Publication</a>
+                    </li>
+                    <li>
+                        <a href="/types/Subject_Note">Subject Note</a>
+                    </li>
+                    <li>
+                        <a href="/types/Presentation">Presentation</a>
+                    </li>
+                    <li>
+                        <a href="/types/Project_Thesis">Project Thesis</a>
+                    </li>
+                    <li>
+                        <a href="/types/Seminar_Report">Seminar Report</a>
+                    </li>
+                    <li>
+                        <a href="/types/Previous_Question_Paper">Previous Question Paper</a>
+                    </li>
+                    <li>
+                        <a href='/about'>About</a>
+                    </li>
+                </ul>
+            </div>
+            <div id='page-content-wrapper'>
+                <nav class='navbar' role='navigation'>
+                    <div class='container-fluid'>
+                        <div class='navbar-header'>
+                            <button class='navbar-toggle collapsed' data-target='#bs-example-navbar-collapse-1' data-toggle='collapse' type='button'>
+                                <span class='sr-only'>Toggle navigation</span>
+                                <span class='icon-bar'>
+                                    <span class='icon-bar'>
+                                        <span class='icon-bar'></span>
+                                    </span>
+                                </span>
+                            </button>
+                        </div>
+                        <div class='collapse navbar-collapse' id='bs-example-navbar-collapse-1'>
+                            <ul class='nav navbar-nav navbar-right'>
+                                <li>
+                                    <a href='/search/index'>
+                                        <span class='glyphicon glyphicon-search'></span>
+                                        Search
+                                    </a>
+                                </li>
+                                <li>
+                                    {% if request.session.user %}
+                                    <a href='/sign_in'>Login</a>
+                                    {% else %}
+                                    <a href='/sign_out'>Logout</a>
+                                    {% endif %}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+                <div class='container-fluid'>
+                    {% block content %}
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+<script>
+$("#menu-toggle").click(function(e)
+        {
+            e.preventDefault();
+            $("#wrapper").toggleClass("toggled");
+        });
+</script>

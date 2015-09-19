@@ -1,148 +1,62 @@
-<html>
-    <head>
-        {% load bootstrap3 %}
-        {% bootstrap_css %}
-        {% bootstrap_javascript %}
-        {% load staticfiles %}
-        <link rel='stylesheet' type='text/css' href={% static "css/sidebar.css" %}>
-    </head>
-    <body>
-        <div id='wrapper'>
-            <div id='sidebar-wrapper'>
-                <ul class='sidebar-nav'>
-                    <li>
-                        <a href='/'>
-                            <img alt="Asiet logo transparent" src={% static "images/asiet_logo_transparent.png" %} width="80%"/>
-                        </a>
-                    </li>
-                    <li class='sidebar-brand'>
-                        <a href='/' style='color:black'>Vijñāna</a>
-                    </li>
-                    <li>
-                        <a href='/'>Home</a>
-                    </li>
-                    <li>
-                        <a href="/types/Paper_Publication">Paper Publication</a>
-                    </li>
-                    <li>
-                        <a href="/types/Subject_Note">Subject Note</a>
-                    </li>
-                    <li>
-                        <a href="/types/Presentation">Presentation</a>
-                    </li>
-                    <li>
-                        <a href="/types/Project_Thesis">Project Thesis</a>
-                    </li>
-                    <li>
-                        <a href="/types/Seminar_Report">Seminar Report</a>
-                    </li>
-                    <li>
-                        <a href="/types/Previous_Question_Paper">Previous Question Paper</a>
-                    </li>
-                    <li>
-                        <a href='/about'>About</a>
-                    </li>
-                </ul>
-            </div>
-            <div id='page-content-wrapper'>
-                <nav class='navbar navbar-default' role='navigation'>
-                    <div class='container-fluid'>
-                        <div class='navbar-header'>
-                            <button class='navbar-toggle collapsed' data-target='#bs-example-navbar-collapse-1' data-toggle='collapse' type='button'>
-                                <span class='sr-only'>Toggle navigation</span>
-                                <span class='icon-bar'>
-                                    <span class='icon-bar'>
-                                        <span class='icon-bar'></span>
-                                    </span>
-                                </span>
-                            </button>
-                        </div>
-                        <div class='collapse navbar-collapse' id='bs-example-navbar-collapse-1'>
-                            <ul class='nav navbar-nav navbar-form'>
-                                <li style='margin-right:30px'>
-                                    <form action="/departments" class="button_to" method="get"><div><input class="btn btn-default" type="submit" value="Departments" /></div></form>
-                                </li>
-                            </ul>
-                            <ul class='nav navbar-nav navbar-right'>
-                                <li>
-                                    <a href='/search/index'>
-                                        <span class='glyphicon glyphicon-search'></span>
-                                        Search
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href='/sign_in'>Login</a>
-                                </li>
-                            </ul>
-                        </div>
+{% extends "master.html" %}
+{% load staticfiles%}
+{% block content %}
+<div class='container-fluid'>
+    <div class='row'>
+        <div class='col-lg-12'>
+            <p style='font-size:20px'>
+            <br>
+            </p>
+            <div class='row'>
+                <div class='col-md-12'>
+                    <div class='alert alert-success'>
+                        <h1 style='margin-top:0px'>Vijñāna</h1>
+                        <p style='text-align:justify'>Vijñāna is a digital repository to store and share all the intelligent content produced at Adi Shankara Institute of Engineering and Technology. It has been developed so as to let the students access the Journal Papers, Project Theses, Question Banks, Model Question Papers and Subject notes, Presentations etc that are written by the staff and students of this college. Vijñāna is written in Ruby on Rails and is developed by students of M.Tech CSE [2014-2016] batch. The details can be found from the link on the sidebar. Various sections of vijñāna are listed below.</p>
                     </div>
-                </nav>
-                <div class='container-fluid'>
-                    <div class='row'>
-                        <div class='col-lg-12'>
-                            <p style='font-size:20px'>
-                            <br>
-                            </p>
-                            <div class='row'>
-                                <div class='col-md-12'>
-                                    <div class='alert alert-success'>
-                                        <h1 style='margin-top:0px'>Vijñāna</h1>
-                                        <p style='text-align:justify'>Vijñāna is a digital repository to store and share all the intelligent content produced at Adi Shankara Institute of Engineering and Technology. It has been developed so as to let the students access the Journal Papers, Project Theses, Question Banks, Model Question Papers and Subject notes, Presentations etc that are written by the staff and students of this college. Vijñāna is written in Ruby on Rails and is developed by students of M.Tech CSE [2014-2016] batch. The details can be found from the link on the sidebar. Various sections of vijñāna are listed below.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class='row'>
-                                <div class='col-md-6'>
-                                    <div class='alert alert-info'>
-                                        <h2 style='margin-top:0px'>
-                                            <a href="/items?type=Subject+Note">Study Materials</a>
-                                            <img alt="Subjectnote" src={% static "images/subjectnote.png" %} width="5%" />
-                                            <img alt="Presentation" src={% static "images/presentation.png" %} width="5%" />
-                                        </h2>
-                                        <p style='text-align:justify'>This section includes various subject notes and presentations of different departments.</p>
-                                    </div>
-                                </div>
-                                <div class='col-md-6'>
-                                    <div class='alert alert-warning'>
-                                        <h2 style='margin-top:0px'>
-                                            <a href="/items?type=Paper+Publication">Journal Papers</a>
-                                            <img alt="Paper" src={% static "images/paper.png" %} width="5%" />
-                                        </h2>
-                                        <p style='text-align:justify'>This section includes the original versions of various journal papers published by staff and students.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class='row'>
-                                <div class='col-md-6'>
-                                    <div class='alert alert-danger'>
-                                        <h2 style='margin-top:0px'>
-                                            <a href="/items?type=Previous+Year+Question+Paper">Previous Question Papers</a>
-                                            <img alt="Question" src={% static "images/question.png" %} width="5%" />
-                                        </h2>
-                                        <p style='text-align:justify'>This section has a collection of previous year question papers of various subjects in image format.</p>
-                                    </div>
-                                </div>
-                                <div class='col-md-6'>
-                                    <div class='alert alert-warning' style='background-color:rgba(194,183,135,0.56)'>
-                                        <h2 style='margin-top:0px;color:#847849'>
-                                            Seminar and Project Reports
-                                            <img alt="Project" src={% static "images/project.png" %} width="5%" />
-                                        </h2>
-                                        <p style='text-align:justify'>This section handles the reports of various seminars and projects undertaken by students.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-md-6'>
+                    <div class='alert alert-info'>
+                        <h2 style='margin-top:0px'>
+                            <a href="/items?type=Subject+Note">Study Materials</a>
+                            <img alt="Subjectnote" src={% static "images/subjectnote.png" %} width="5%" />
+                            <img alt="Presentation" src={% static "images/presentation.png" %} width="5%" />
+                        </h2>
+                        <p style='text-align:justify'>This section includes various subject notes and presentations of different departments.</p>
+                    </div>
+                </div>
+                <div class='col-md-6'>
+                    <div class='alert alert-warning'>
+                        <h2 style='margin-top:0px'>
+                            <a href="/items?type=Paper+Publication">Journal Papers</a>
+                            <img alt="Paper" src={% static "images/paper.png" %} width="5%" />
+                        </h2>
+                        <p style='text-align:justify'>This section includes the original versions of various journal papers published by staff and students.</p>
+                    </div>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-md-6'>
+                    <div class='alert alert-danger'>
+                        <h2 style='margin-top:0px'>
+                            <a href="/items?type=Previous+Year+Question+Paper">Previous Question Papers</a>
+                            <img alt="Question" src={% static "images/question.png" %} width="5%" />
+                        </h2>
+                        <p style='text-align:justify'>This section has a collection of previous year question papers of various subjects in image format.</p>
+                    </div>
+                </div>
+                <div class='col-md-6'>
+                    <div class='alert alert-warning' style='background-color:rgba(194,183,135,0.56)'>
+                        <h2 style='margin-top:0px;color:#847849'>
+                            Seminar and Project Reports
+                            <img alt="Project" src={% static "images/project.png" %} width="5%" />
+                        </h2>
+                        <p style='text-align:justify'>This section handles the reports of various seminars and projects undertaken by students.</p>
                     </div>
                 </div>
             </div>
         </div>
-    </body>
-</html>
-<script>
-$("#menu-toggle").click(function(e)
-        {
-            e.preventDefault();
-            $("#wrapper").toggleClass("toggled");
-        });
-</script>
+    </div>
+</div>
+{% endblock %}
