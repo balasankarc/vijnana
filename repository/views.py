@@ -7,13 +7,11 @@ from django.core.exceptions import ObjectDoesNotExist
 
 
 def home(request):
-    content = "This is the homepage"
-    return render(request, 'home.html', {'content': content})
+    return render(request, 'home.html')
 
 
 def user_signin(request):
     error = ""
-    print "reached here"
     if request.POST:
         form = SignInForm(request.POST)
         if form.is_valid():
@@ -33,5 +31,14 @@ def user_signin(request):
             except ObjectDoesNotExist:
                 error = "Incorrect username or password"
                 print "Exception caught"
-    print "reached here"
+    else:
+        if 'user' in request.session.keys():
+            # If user already logged in, redirect to homepage
+            return HttpResponseRedirect('/')
     return render(request, 'signin.html', {'error': error})
+
+
+def user_signout(request):
+    if 'user' in request.session.keys():
+        del request.session['user']
+    return HttpResponseRedirect('/')
