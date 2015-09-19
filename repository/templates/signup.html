@@ -1,0 +1,26 @@
+{% extends "master.html" %}
+{% block content %}
+{% if error %}
+<div class="alert alert-danger">
+    {{error}}
+</div>
+{% endif %}
+<div class="row">
+    <div style="margin:0 auto">
+        <form action="/sign_up/" method="post" class="form-signin">
+            {% csrf_token %}
+            <h2 class="form-signin-heading">Sign Up</h2>
+            <input id="username" type="text" name="username" value="{{ input_username }}" placeholder="Username" class="form-control" required>
+            <input id="password" type="password" name="password" placeholder="Password" class="form-control" required>
+            <input id="fullname" type="text" name="fullname" value="{{ input_name }}" placeholder="Name" class="form-control" required>
+            <select class="form-control" name='department'>
+                <option selected="selected">Department</option>
+                {% for department in department_list %}
+                <option value={{department.id}}>{{department.name}}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary form-control">Register</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

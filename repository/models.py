@@ -3,10 +3,14 @@ from django.db import models
 
 class Department(models.Model):
     name = models.CharField(max_length=50)
+    abbreviation = models.CharField(max_length=10)
+
+    def __unicode__(self):
+        return self.name
 
 
 class User(models.Model):
-    username = models.CharField(max_length=25)
+    username = models.CharField(max_length=25, unique=True)
     password = models.CharField(max_length=100)
     name = models.CharField(max_length=50)
     status = models.CharField(max_length=20)
