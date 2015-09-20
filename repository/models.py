@@ -26,7 +26,8 @@ class Subject(models.Model):
     department = models.ForeignKey(Department)
 
 
-# class Resource(models.model):
-    # title = models.CharField(max_length=100)
-    # category = models.CharField(max_length=50)
-    # subject = models.ForeignKey(Subject)
+class Resource(models.Model):
+    title = models.CharField(max_length=100)
+    category = models.CharField(max_length=50)
+    subject = models.ForeignKey(Subject)
+    resourcefile = models.FileField(upload_to='resources')

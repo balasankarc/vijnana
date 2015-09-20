@@ -81,3 +81,7 @@ def user_signup(request):
             return HttpResponseRedirect('/')
     return render(request, 'signup.html',
                   {'error': error, 'department_list': department_list})
+
+
+def new_resource(request):
+    return render(request, 'newresource.html')
