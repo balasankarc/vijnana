@@ -2,3 +2,4 @@
 *.swp
 *.tmp
 *.sqlite3
+repository/uploads/resources/*
