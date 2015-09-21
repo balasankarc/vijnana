@@ -6,7 +6,6 @@ from django.db import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from .exceptions import DepartmentNotGivenError
 from .forms import NewResourceForm, SignInForm, SignUpForm
 from .models import Department, Subject, User, Resource
 
@@ -63,8 +62,6 @@ def user_signup(request):
                 input_password = form.cleaned_data['password']
                 input_name = form.cleaned_data['fullname']
                 input_department = form.cleaned_data['department']
-                if input_department == 'Department':
-                    raise DepartmentNotGivenError
                 password_hash = bcrypt.hashpw(input_password, bcrypt.gensalt())
                 user = User(username=input_username,
                             password=password_hash,
@@ -75,8 +72,6 @@ def user_signup(request):
                 return HttpResponseRedirect('/')
             except IntegrityError:
                 error = error + "Username already in use"
-            except DepartmentNotGivenError:
-                error = error + "Department is mandatory"
     else:
         if 'user' in request.session.keys():
             # If user already logged in, redirect to homepage
@@ -97,12 +92,8 @@ def new_resource(request):
                 input_title = form.cleaned_data['title']
                 input_category = form.cleaned_data['category']
                 input_subject = Subject.objects.get(
-                        id=form.cleaned_data['subject'])
+                    id=form.cleaned_data['subject'])
                 input_file = request.FILES['resourcefile']
-                # hashout = hashlib.md5()
-                # hashout.update(input_title)
-                # filename = input_title[1:10] + '_' + hashout.hexdigest() +
-                # input_title[-10:]
                 resource = Resource(
                     title=input_title, category=input_category,
                     subject=input_subject, resourcefile=input_file)
