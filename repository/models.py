@@ -49,3 +49,4 @@ class Resource(models.Model):
     category = models.CharField(max_length=50)
     subject = models.ForeignKey(Subject)
     resourcefile = models.FileField(upload_to=set_filename)
+    uploader = models.ForeignKey(User)
