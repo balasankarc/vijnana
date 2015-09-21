@@ -1,3 +1,5 @@
+# import hashlib
+
 import bcrypt
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
@@ -5,8 +7,8 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
 from .exceptions import DepartmentNotGivenError
-from .forms import SignInForm, SignUpForm
-from .models import Department, User
+from .forms import NewResourceForm, SignInForm, SignUpForm
+from .models import Department, Subject, User, Resource
 
 
 def home(request):
@@ -84,4 +86,30 @@ def user_signup(request):
 
 
 def new_resource(request):
-    return render(request, 'newresource.html')
+    subject_list = Subject.objects.all()
+    error = ""
+    if request.POST:
+        print request.POST
+        form = NewResourceForm(request.POST, request.FILES)
+        print form
+        if form.is_valid():
+            try:
+                input_title = form.cleaned_data['title']
+                input_category = form.cleaned_data['category']
+                input_subject = Subject.objects.get(
+                        id=form.cleaned_data['subject'])
+                input_file = request.FILES['resourcefile']
+                # hashout = hashlib.md5()
+                # hashout.update(input_title)
+                # filename = input_title[1:10] + '_' + hashout.hexdigest() +
+                # input_title[-10:]
+                resource = Resource(
+                    title=input_title, category=input_category,
+                    subject=input_subject, resourcefile=input_file)
+                resource.save()
+                return HttpResponseRedirect('/')
+            except Exception, e:
+                error = e
+                print error
+    return render(request, 'newresource.html',
+                  {'error': error, 'subject_list': subject_list})
