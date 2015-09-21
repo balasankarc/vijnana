@@ -10,6 +10,16 @@ from .forms import NewResourceForm, SignInForm, SignUpForm
 from .models import Department, Subject, User, Resource
 
 
+RESOURCE_TYPES = {
+    'Presentation': 'presentation',
+    'Paper Publication': 'paper_publication',
+    'Subject Note': 'subject_note',
+    'Project Thesis': 'project_thesis',
+    'Seminar Report': 'seminar_report',
+    'Previous Question Paper': 'previous_question_paper'
+    }
+
+
 def home(request):
     return render(request, 'home.html')
 
@@ -103,4 +113,8 @@ def new_resource(request):
                 error = e
                 print error
     return render(request, 'newresource.html',
-                  {'error': error, 'subject_list': subject_list})
+                  {
+                   'error': error,
+                   'subject_list': subject_list,
+                   'type_list': RESOURCE_TYPES
+                  })
