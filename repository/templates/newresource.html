@@ -1,0 +1,28 @@
+{% extends "master.html" %}
+{% block content %}
+{% if error %}
+<div class="alert alert-danger">
+    {{error}}
+</div>
+{% endif %}
+<div class="row">
+    <div style="margin:0 auto">
+        <form action="/new_resource/" method="post" class="form-signin" enctype=multipart/form-data>
+            {% csrf_token %}
+            <h2 class="form-signin-heading">Add new resource</h2>
+            <input type="file" id="resourcefile" name="resourcefile" class="form-control">
+            <input id="title" type="text" name="title" value="{{ input_title }}" placeholder="Title" class="form-control" required>
+            <select class='form-control' name='category' id='category'>
+                <option value='presentation'>Presentation</option>
+            </select>
+            <select class="form-control" name='subject' id='subject'>
+                <option selected="selected">Subject</option>
+                {% for subject in subject_list %}
+                <option value={{subject.id}}>{{subject.name}}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary form-control">Upload</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
