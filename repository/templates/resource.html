@@ -1,0 +1,44 @@
+{% extends "master.html" %}
+{% block content %}
+<div class='container-fluid'>
+    <div class='row'>
+        <div class='col-lg-12'>
+            <p style='font-size:20px'>
+            <br>
+            </p>
+            <p id='notice'></p>
+            <div class='panel panel-default'>
+                <div class='panel-heading'>
+                    <h3>Resource Details</h3>
+                </div>
+                <div class='jumbotron'>
+                    <div class='h1' style='margin-top:0;padding-top:0'>
+                        test
+                    </div>
+                    <b>Course:</b>
+                    <a href="{{resource.subject.course}}">{{resource.subject.course}}</a>
+                    <br>
+                    <b>Department:</b>
+                    <a href="/departments/3">{{resource.subject.department}}</a>
+                    <br>
+                    <b>Semester:</b>
+                    <a href="/semesters/4">{{resource.subject.semester}}</a>
+                    <br>
+                    <b>Subject:</b>
+                    <a href="/subjects/1">{{resource.subject.name}}</a>
+                    <br>
+                    <b>Type:</b>
+                    <a href="/types/3">{{resource.category.title}}</a>
+                    <br>
+                    <b>Uploader:</b>
+                    <a href="/users/1">{{resource.uploader.name}}</a>
+                    <br>
+                    <br>
+
+                    <a class="btn btn-primary" href="/uploads/{{resource.resourcefile.url}}">Download File</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

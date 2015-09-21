@@ -1,5 +1,3 @@
-# import hashlib
-
 import bcrypt
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
@@ -7,8 +5,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
 from .forms import NewResourceForm, SignInForm, SignUpForm
-from .models import Department, Subject, User, Resource
-
+from .models import Department, Resource, Subject, User
 
 RESOURCE_TYPES = {
     'Presentation': 'presentation',
@@ -118,3 +115,20 @@ def new_resource(request):
                    'subject_list': subject_list,
                    'type_list': RESOURCE_TYPES
                   })
+
+
+def get_resource(request, resource_id):
+    try:
+        resource = Resource.objects.get(id=resource_id)
+        return render(request, 'resource.html', {'resource': resource})
+    except ObjectDoesNotExist:
+        return render(request, 'error.html',
+                      {
+                        'error': 'The requested resource not found.'
+                      }, status=404)
+    except:
+        return render(request, 'error.html',
+                      {
+                        'error': '''Server encountered some error.
+                        Contact Administrator.'''
+                      }, status=500)
