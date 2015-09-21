@@ -17,5 +17,7 @@ urlpatterns = patterns('',
                            {
                             'document_root': settings.MEDIA_ROOT + 'resources',
                            }
-                           )
+                           ),
+                       url(r'type/(?P<type_name>[a-zA-Z _]+)/$',
+                           'repository.views.type_resource_list')
                        )

@@ -132,3 +132,19 @@ def get_resource(request, resource_id):
                         'error': '''Server encountered some error.
                         Contact Administrator.'''
                       }, status=500)
+
+
+def type_resource_list(request, type_name):
+    try:
+        type_name = type_name.replace('_', ' ')
+        resources = Resource.objects.filter(category=RESOURCE_TYPES[type_name])
+        if resources:
+            return render(request, 'type_resource_list.html',
+                          {'resource_list': resources, 'type': type_name})
+        else:
+            raise
+    except:
+        return render(request, 'error.html',
+                      {
+                        'error': 'No resources under the requested category'
+                      }, status=404)

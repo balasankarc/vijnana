@@ -1,0 +1,31 @@
+{% extends "master.html" %}
+{% load staticfiles%}
+{% block content %}
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h3>{{type}}</h3>
+    </div>
+    <table class='table table-bordered'>
+        {% for resource in resource_list %}
+        <tr>
+            <td style="width:5%;border-right:0px;vertical-align:middle">
+                <a href="/resource/{{resource.id}}">
+                    <img alt="Presentation" src={% static "images/presentation.png" %} width="100%" />
+                </a>
+            </td>
+            <td style="border-left:0px">
+                <a href="/resource/{{resource.id}}" style="font-size:20pt">
+                    {{resource.title}}
+                </a>
+                <br />
+                <p style="font-size:small">
+                {{resource.uploader.name}}
+                <br />
+                {{resource.subject.code}} - {{resource.subject.name}}
+                </p>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
