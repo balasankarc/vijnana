@@ -1,4 +1,22 @@
+import hashlib
+import os
+
 from django.db import models
+
+
+def set_filename(instance, filename):
+    hashout = hashlib.md5()
+    filenamesplit = os.path.splitext(filename)
+    input_filename = filenamesplit[0].replace(
+        ' ', '_').replace(',', '_').replace('.', '_')
+    extension = filenamesplit[1]
+    hashout.update(input_filename)
+    if len(input_filename) < 10:
+        outfilename = input_filename + hashout.hexdigest() + extension
+    else:
+        outfilename = input_filename[:10] + '_' + \
+            hashout.hexdigest() + input_filename[-10:] + extension
+    return os.path.join('resources', outfilename)
 
 
 class Department(models.Model):
@@ -30,4 +48,4 @@ class Resource(models.Model):
     title = models.CharField(max_length=100)
     category = models.CharField(max_length=50)
     subject = models.ForeignKey(Subject)
-    resourcefile = models.FileField(upload_to='resources')
+    resourcefile = models.FileField(upload_to=set_filename)
