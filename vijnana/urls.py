@@ -12,12 +12,13 @@ urlpatterns = patterns('',
                        url(r'^resource/(?P<resource_id>[0-9]+)/$',
                            'repository.views.get_resource'),
                        url(r'^sign_out/$', 'repository.views.user_signout'),
+                       url(r'type/(?P<type_name>[a-zA-Z _]+)/$',
+                           'repository.views.type_resource_list'),
+                       url(r'^search/$', 'repository.views.search'),
                        url(r'^uploads/resources/(?P<path>.*)$',
                            'django.views.static.serve',
                            {
                             'document_root': settings.MEDIA_ROOT + 'resources',
                            }
                            ),
-                       url(r'type/(?P<type_name>[a-zA-Z _]+)/$',
-                           'repository.views.type_resource_list')
                        )

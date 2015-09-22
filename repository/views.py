@@ -4,7 +4,7 @@ from django.db import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from .forms import NewResourceForm, SignInForm, SignUpForm
+from .forms import NewResourceForm, SignInForm, SignUpForm, SearchForm
 from .models import Department, Resource, Subject, User
 
 RESOURCE_TYPES = {
@@ -148,3 +148,29 @@ def type_resource_list(request, type_name):
                       {
                         'error': 'No resources under the requested category'
                       }, status=404)
+
+
+def search(request):
+    if request.POST:
+        try:
+            form = SearchForm(request.POST)
+            if form.is_valid():
+                print dir(form)
+                query = form.cleaned_data['query']
+                resource_list = Resource.objects.filter(title__contains=query)
+                if resource_list:
+                    return render(request, 'search.html',
+                                  {'resource_list': resource_list,
+                                   'query': query})
+                else:
+                    raise
+            else:
+                raise
+        except Exception, e:
+            print e
+            return render(request, 'error.html',
+                          {
+                            'error': 'Searched returned no resources.'
+                          }, status=404)
+    else:
+        return render(request, 'search.html')

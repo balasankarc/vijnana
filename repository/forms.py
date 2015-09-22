@@ -18,3 +18,7 @@ class NewResourceForm(forms.Form):
     category = forms.CharField()
     subject = forms.CharField()
     resourcefile = forms.FileField()
+
+
+class SearchForm(forms.Form):
+    query = forms.CharField()
