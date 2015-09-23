@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'bootstrap3',
     'repository',
+    'django_nose'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -94,3 +95,5 @@ TEMPLATE_CONTEXT_PROCESSORS = ("django.contrib.auth.context_processors.auth",
                                "django.contrib.messages.context_processors.messages")
 
 MEDIA_ROOT = '/home/balasankarc/git/vijnana_django/vijnana/repository/uploads/'
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
