@@ -1,0 +1,4 @@
+django
+bcrypt
+django-nose
+django-bootstrap3
