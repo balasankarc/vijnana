@@ -3,5 +3,5 @@ python:
     - "2.7"
 env:
   - DJANGO_VERSION=1.7.9
-install: "pip install django bcrypt django-nose"
+install: "pip install django bcrypt django-nose django-bootstrap3"
 script: 'python manage.py test'
