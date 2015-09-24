@@ -1,12 +1,12 @@
 <html>
     <head>
-        {% load bootstrap3 %}
-        {% bootstrap_css %}
-        {% bootstrap_javascript %}
         {% load staticfiles %}
         <link rel='stylesheet' type='text/css' href={% static "css/sidebar.css" %}>
         <link rel='stylesheet' type='text/css' href={% static "css/style.css" %}>
         <script type="text/javascript" src="{% static "js/custom.js" %}" ></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
     </head>
     <body>
         <div id='wrapper'>
@@ -60,7 +60,11 @@
                             </button>
                         </div>
                         <div class='collapse navbar-collapse' id='bs-example-navbar-collapse-1'>
-
+                            {% if request.session.usertype == 'teacher' %}
+                                <ul class='nav navbar-nav navbar-left'>
+                                    <li><a href="/new_resource/"><span class='glyphicon glyphicon-plus'></span>Add Resource</a></li>
+                                </ul>
+                            {% endif %}
                             <ul class='nav navbar-nav navbar-right'>
                                 <li>
                                     <a onclick='vis()' href="#">
@@ -69,7 +73,20 @@
                                 </li>
                                 <li>
                                     {% if request.session.user %}
-                                    <a href='/sign_out'>Logout</a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="border:0px">
+                                            <span style="color:#428BCA">{{request.session.user}}</span>
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                                            <li><a href="/my_subjects/">My Subjects</a></li>
+                                            {% if request.session.usertype == 'teacher' %}
+                                            {% endif %}
+                                            <li><a href="edit_profile">Edit Profile</a></li>
+                                            <li role="separator" class="divider"></li>
+                                            <li><a href="/sign_out/">SIgn Out</a></li>
+                                        </ul>
+                                    </div>
                                     {% else %}
                                     <a href='/sign_in'>Login</a>
                                     {% endif %}

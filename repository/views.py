@@ -8,13 +8,13 @@ from .forms import NewResourceForm, SignInForm, SignUpForm, SearchForm
 from .models import Department, Resource, Subject, User
 
 RESOURCE_TYPES = {
-    'Presentation': 'presentation',
-    'Paper Publication': 'paper_publication',
-    'Subject Note': 'subject_note',
-    'Project Thesis': 'project_thesis',
-    'Seminar Report': 'seminar_report',
-    'Previous Question Paper': 'previous_question_paper'
-    }
+        'Presentation': 'presentation',
+        'Paper Publication': 'paper_publication',
+        'Subject Note': 'subject_note',
+        'Project Thesis': 'project_thesis',
+        'Seminar Report': 'seminar_report',
+        'Previous Question Paper': 'previous_question_paper'
+        }
 
 USER_STATUS = ['student', 'faculty', 'labstaff', 'administrator', 'hod']
 
@@ -42,6 +42,7 @@ def user_signin(request):
                 if bcrypt.hashpw(input_password, password) == password:
                     print "Success"
                     request.session['user'] = username
+                    request.session['usertype'] = user.status
                     return HttpResponseRedirect('/')
                 else:
                     raise ObjectDoesNotExist
@@ -106,11 +107,14 @@ def new_resource(request):
                 input_title = form.cleaned_data['title']
                 input_category = form.cleaned_data['category']
                 input_subject = Subject.objects.get(
-                    id=form.cleaned_data['subject'])
+                        id=form.cleaned_data['subject'])
+                resource_uploader = User.objects.get(
+                        username=request.session['user'])
                 input_file = request.FILES['resourcefile']
                 resource = Resource(
-                    title=input_title, category=input_category,
-                    subject=input_subject, resourcefile=input_file)
+                        title=input_title, category=input_category,
+                        subject=input_subject, resourcefile=input_file,
+                        uploader=resource_uploader)
                 resource.save()
                 return HttpResponseRedirect('/')
             except Exception, e:
@@ -118,9 +122,9 @@ def new_resource(request):
                 print error
     return render(request, 'newresource.html',
                   {
-                   'error': error,
-                   'subject_list': subject_list,
-                   'type_list': RESOURCE_TYPES
+                    'error': error,
+                    'subject_list': subject_list,
+                    'type_list': RESOURCE_TYPES
                   })
 
 
@@ -138,7 +142,7 @@ def get_resource(request, resource_id):
         return render(request, 'error.html',
                       {
                         'error': """Server encountered some error.
-                        Contact Administrator."""
+                                 Contact Administrator."""
                       }, status=500)
 
 
@@ -149,7 +153,10 @@ def type_resource_list(request, type_name):
         resources = Resource.objects.filter(category=RESOURCE_TYPES[type_name])
         if resources:
             return render(request, 'type_resource_list.html',
-                          {'resource_list': resources, 'type': type_name})
+                          {
+                            'resource_list': resources,
+                            'type': type_name
+                          })
         else:
             raise
     except:
@@ -170,8 +177,10 @@ def search(request):
                 resource_list = Resource.objects.filter(title__contains=query)
                 if resource_list:
                     return render(request, 'search.html',
-                                  {'resource_list': resource_list,
-                                   'query': query})
+                                  {
+                                    'resource_list': resource_list,
+                                    'query': query
+                                  })
                 else:
                     raise
             else:
