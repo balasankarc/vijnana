@@ -5,6 +5,7 @@ from django.db import models
 
 
 def set_filename(instance, filename):
+    '''Set a unique file name to the uploaded resource before saving it'''
     hashout = hashlib.md5()
     filenamesplit = os.path.splitext(filename)
     input_filename = filenamesplit[0].replace(
@@ -42,6 +43,8 @@ class Subject(models.Model):
     course = models.CharField(max_length=10)
     semester = models.CharField(max_length=10)
     department = models.ForeignKey(Department)
+    staff = models.ManyToManyField(User, related_name="teachingsubjects")
+    students = models.ManyToManyField(User, related_name="subscribedsubjects")
 
 
 class Resource(models.Model):
