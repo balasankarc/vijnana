@@ -16,12 +16,16 @@ RESOURCE_TYPES = {
     'Previous Question Paper': 'previous_question_paper'
     }
 
+USER_STATUS = ['student', 'faculty', 'labstaff', 'administrator', 'hod']
+
 
 def home(request):
+    """Displays home page"""
     return render(request, 'home.html')
 
 
 def user_signin(request):
+    """Handles user's sign in action"""
     error = ""
     username = ""
     if request.POST:
@@ -53,12 +57,14 @@ def user_signin(request):
 
 
 def user_signout(request):
+    """Handles user's sign out action"""
     if 'user' in request.session.keys():
         del request.session['user']
     return HttpResponseRedirect('/')
 
 
 def user_signup(request):
+    """Handles user's sign up action"""
     department_list = Department.objects.all()
     error = ""
     if request.POST:
@@ -88,6 +94,7 @@ def user_signup(request):
 
 
 def new_resource(request):
+    """Add a new resource"""
     subject_list = Subject.objects.all()
     error = ""
     if request.POST:
@@ -118,6 +125,7 @@ def new_resource(request):
 
 
 def get_resource(request, resource_id):
+    """Get details about a single resource"""
     try:
         resource = Resource.objects.get(id=resource_id)
         return render(request, 'resource.html', {'resource': resource})
@@ -129,12 +137,13 @@ def get_resource(request, resource_id):
     except:
         return render(request, 'error.html',
                       {
-                        'error': '''Server encountered some error.
-                        Contact Administrator.'''
+                        'error': """Server encountered some error.
+                        Contact Administrator."""
                       }, status=500)
 
 
 def type_resource_list(request, type_name):
+    """Get all resources of a specific type"""
     try:
         type_name = type_name.replace('_', ' ')
         resources = Resource.objects.filter(category=RESOURCE_TYPES[type_name])
@@ -151,6 +160,7 @@ def type_resource_list(request, type_name):
 
 
 def search(request):
+    """Search for resources having a specific query in their title"""
     if request.POST:
         try:
             form = SearchForm(request.POST)
