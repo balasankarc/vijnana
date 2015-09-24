@@ -61,6 +61,7 @@ def user_signout(request):
     """Handles user's sign out action"""
     if 'user' in request.session.keys():
         del request.session['user']
+        del request.session['usertype']
     return HttpResponseRedirect('/')
 
 
