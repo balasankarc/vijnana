@@ -19,6 +19,10 @@ RESOURCE_TYPES = {
 USER_STATUS = ['student', 'faculty', 'labstaff', 'administrator', 'hod']
 
 
+def current_user(request):
+    return User.objects.get(username=request.session['user'])
+
+
 def home(request):
     """Displays home page"""
     return render(request, 'home.html')
@@ -194,3 +198,23 @@ def search(request):
                           }, status=404)
     else:
         return render(request, 'search.html')
+
+
+def my_subjects(request):
+    user = current_user(request)
+    if user.status == 'teacher':
+        subject_list = user.teachingsubjects.all()
+    else:
+        subject_list = user.subscribedsubjects.all()
+    print subject_list
+    return render(request, 'home.html')
+
+
+def view_subject(request, subject_id):
+    subject = Subject.objects.get(id=subject_id)
+    resource_list = subject.resource_set.all()
+    return render(request, 'subject_resource_list.html',
+                  {
+                    'subject': subject.name,
+                    'resource_list': resource_list,
+                  })
