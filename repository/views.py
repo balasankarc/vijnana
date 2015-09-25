@@ -230,3 +230,13 @@ def subscribe_me(request, subject_id):
     subject.students.add(current_user(request))
     subject.save()
     return HttpResponseRedirect('/subject/'+subject_id)
+
+
+def unsubscribe_me(request, subject_id):
+    subject = Subject.objects.get(id=subject_id)
+    if 'user' in request.session:
+        user = current_user(request)
+        if user in subject.students.all():
+            subject.students.remove(user)
+            subject.save()
+    return HttpResponseRedirect('/subject/'+subject_id)
