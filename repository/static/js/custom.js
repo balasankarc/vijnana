@@ -7,5 +7,6 @@ function vis()
     else
     {
         document.getElementById('searchform').style.visibility= 'visible';
+        document.getElementById('query').focus();
     }
 }
