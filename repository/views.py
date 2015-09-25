@@ -213,8 +213,20 @@ def my_subjects(request):
 def view_subject(request, subject_id):
     subject = Subject.objects.get(id=subject_id)
     resource_list = subject.resource_set.all()
+    subscription_status = True
+    if 'user' in request.session:
+        if subject not in current_user(request).subscribedsubjects.all():
+            subscription_status = False
     return render(request, 'subject_resource_list.html',
                   {
-                    'subject': subject.name,
+                    'subject': subject,
                     'resource_list': resource_list,
+                    'subscription_status': subscription_status
                   })
+
+
+def subscribe_me(request, subject_id):
+    subject = Subject.objects.get(id=subject_id)
+    subject.students.add(current_user(request))
+    subject.save()
+    return HttpResponseRedirect('/subject/'+subject_id)
