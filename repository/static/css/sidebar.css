@@ -34,7 +34,7 @@
 }
 
 #wrapper.toggled #sidebar-wrapper {
-    width: 15%;
+    width: 40%;
 }
 
 #page-content-wrapper {
@@ -43,7 +43,9 @@
 
 #wrapper.toggled #page-content-wrapper {
     position: absolute;
-    margin-right: -15%;
+    margin-right: -25%;
+    width:60%;
+    margin-left:25%;
 }
 
 /* Sidebar Styles */
@@ -117,6 +119,8 @@
 
     #wrapper.toggled #page-content-wrapper {
         position: relative;
-        margin-right: 0;
+        margin-right: 5%;
+        width:90%;
+        margin-left:5%;
     }
 }
