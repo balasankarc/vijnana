@@ -4,7 +4,8 @@ from django.db import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from .forms import NewResourceForm, SignInForm, SignUpForm, SearchForm
+from .forms import (AssignOrRemoveStaffForm, NewResourceForm, SearchForm, SignInForm,
+                    SignUpForm)
 from .models import Department, Resource, Subject, User
 
 RESOURCE_TYPES = {
@@ -257,4 +258,70 @@ def unsubscribe_me(request, subject_id):
         if user in subject.students.all():
             subject.students.remove(user)
             subject.save()
+    return HttpResponseRedirect('/subject/'+subject_id)
+
+
+def assign_staff(request, subject_id):
+    subject = Subject.objects.get(id=subject_id)
+    is_hod = False
+    if 'user' in request.session:
+        user = current_user(request)
+        if user.status == 'hod' and user.department == subject.department:
+            is_hod = True
+    if request.POST:
+        print "POST"
+        try:
+            form = AssignOrRemoveStaffForm(request.POST)
+            if form.is_valid():
+                for staff_id in form.cleaned_data['staffselect']:
+                    staff = User.objects.get(id=staff_id)
+                    subject.staff.add(staff)
+            else:
+                print form
+        except Exception, e:
+            print e
+    else:
+        staff_list = {}
+        for department in Department.objects.all():
+            staff_list[department.name] = [x for x in department.user_set.all()
+                                           if x.status == 'teacher' or
+                                           x.status == 'hod']
+        print staff_list
+        return render(request, 'assign_staff.html',
+                      {
+                        'is_hod': is_hod,
+                        'staff_list': staff_list,
+                        'subject': subject
+                      })
+    return HttpResponseRedirect('/subject/'+subject_id)
+
+
+def remove_staff(request, subject_id):
+    subject = Subject.objects.get(id=subject_id)
+    if 'user' in request.session:
+        user = current_user(request)
+        if user.status == 'hod' and user.department == subject.department:
+            is_hod = True
+    if request.POST:
+        print "POST"
+        try:
+            form = AssignOrRemoveStaffForm(request.POST)
+            if form.is_valid():
+                for staff_id in form.cleaned_data['staffselect']:
+                    staff = User.objects.get(id=staff_id)
+                    subject.staff.remove(staff)
+                    subject.save()
+            else:
+                print form
+        except Exception, e:
+            print e
+    else:
+        staff_list = subject.staff.all()
+        print staff_list
+        return render(request, 'remove_staff.html',
+                      {
+                        'is_hod': is_hod,
+                        'staff_list': staff_list,
+                        'subject': subject
+                      })
     return HttpResponseRedirect('/subject/'+subject_id)

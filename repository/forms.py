@@ -1,4 +1,5 @@
 from django import forms
+from .models import User
 
 
 class SignInForm(forms.Form):
@@ -22,3 +23,10 @@ class NewResourceForm(forms.Form):
 
 class SearchForm(forms.Form):
     query = forms.CharField()
+
+
+class AssignOrRemoveStaffForm(forms.Form):
+    user_ids = [(x.id, x.name)
+                for x in User.objects.all()
+                if x.status == 'teacher' or x.status == 'hod']
+    staffselect = forms.MultipleChoiceField(choices=user_ids)

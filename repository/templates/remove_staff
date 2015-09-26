@@ -1,0 +1,50 @@
+{% extends "master.html" %}
+{% block content %}
+{% if not is_hod  %}
+<div class="alert alert-danger">
+    You don't have permission to access this page.
+</div>
+{% else %}
+{% if error %}
+<div class="alert alert-danger">
+    {{error}}
+</div>
+{% endif %}
+<style>
+select.multiselect,
+select.multiselect + div.btn-group,
+select.multiselect + div.btn-group button.multiselect,
+select.multiselect + div.btn-group.open .multiselect-container{
+    width:100% !important;
+}
+</style>
+<div class="row">
+    <div style="margin:0 auto">
+        <form action="/subject/{{subject.id}}/assign_staff" method="post" class="form-signin" enctype=multipart/form-data>
+            {% csrf_token %}
+            <h2 class="form-signin-heading" style="text-align:center">Assign Staff to {{subject.name}}</h2>
+            <select id="staffselect" name="staffselect" multiple="multiple">
+                {% for department,teachers in staff_list.items %}
+                <optgroup label="{{department}}">
+                    {%for staff in teachers %}
+                    <option value="{{staff.id}}">{{staff.name}}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary form-control">Add Staff</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#staffselect').multiselect(
+                {inheritClass: true,
+                 buttonClass: 'form-control',
+                buttonWidth:'100%',
+                nonSelectedText: 'Select staff to add'}
+                );
+    });
+</script>
+{% endblock %}
