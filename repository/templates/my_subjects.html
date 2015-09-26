@@ -1,0 +1,29 @@
+{% extends "master.html" %}
+{% load staticfiles%}
+{% block content %}
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+                <h3 style="margin-top:0;margin-bottom:0">My Subjects</h3>
+    </div>
+    <table class='table table-bordered'>
+        {% for subject in subject_list %}
+        <tr>
+            <td style="width:5%;border-right:0px;vertical-align:middle">
+                <a href="/subject/{{subject.id}}">{{subject.code}}
+                </a>
+            </td>
+            <td style="border-left:0px">
+                <a href="/subject/{{subject.id}}" style="font-size:20pt">
+                    {{subject.name}}
+                </a>
+                <br />
+                <p style="font-size:small">
+                {{subject.department.name}}
+                <br />
+                </p>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

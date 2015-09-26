@@ -207,7 +207,10 @@ def my_subjects(request):
     else:
         subject_list = user.subscribedsubjects.all()
     print subject_list
-    return render(request, 'home.html')
+    return render(request, 'my_subjects.html',
+                  {
+                    'subject_list': subject_list
+                  })
 
 
 def view_subject(request, subject_id):
