@@ -4,14 +4,33 @@
 <div class='panel panel-default'>
     <div class='panel-heading'>
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <h3 style="margin-top:0;margin-bottom:0">{{subject.name}}</h3>
             </div>
-            <div class="col-md-6" style="text-align:right;margin-top:0;margin-bottom:0">
-                {% if not subscription_status %}
-                <a href="/subject/{{subject.id}}/subscribe_me"><button class="btn btn-primary">Subscribe Me</button></a>
+            <div class="col-md-4" style="margin-top:0;margin-bottom:0">
+            {% if has_staff %}
+                <ul style="list-style-type:none;">
+                {% for staff in subject_staff_list %}
+                    <li>{{staff.name}}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+            </div>
+            <div class="col-md-4" style="text-align:right;margin-top:0;margin-bottom:0">
+                {% if not is_hod %}
+                    {% if not is_staff %}
+                        {% if not subscription_status %}
+                            <a href="/subject/{{subject.id}}/subscribe_me"><button class="btn btn-primary">Subscribe Me</button></a>
+                        {% else %}
+                            <a href="/subject/{{subject.id}}/unsubscribe_me"><button class="btn btn-danger">Unsubscribe</button></a>
+                        {% endif %}
+                    {% endif %}
                 {% else %}
-                <a href="/subject/{{subject.id}}/unsubscribe_me"><button class="btn btn-danger">Unsubscribe</button></a>
+                    {% if not has_staff %}
+                        <a href="/subject/{{subject.id}}/subscribe_me"><button class="btn btn-primary">Add Staff</button></a>
+                    {% else %}
+                        <a href="/subject/{{subject.id}}/subscribe_me"><button class="btn btn-danger">Remove Staff</button></a>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
