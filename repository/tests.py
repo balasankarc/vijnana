@@ -1,5 +1,5 @@
 from django.test import TestCase
-from .models import User
+from .models import User, Subject
 from django.db import IntegrityError
 
 
@@ -15,3 +15,17 @@ class UserTests(TestCase):
         with self.assertRaises(IntegrityError):
             second_user = User(username='testuser2', department_id=1)
             second_user.save()
+
+
+class SubjectTests(TestCase):
+    def test_subject_required_not_null(self):
+        first_subject = Subject(code='subject1')
+        with self.assertRaises(IntegrityError):
+            first_subject.save()
+
+    def test_subject_unique_code(self):
+        first_subject = Subject(code='testsubject2', department_id=1)
+        first_subject.save()
+        with self.assertRaises(IntegrityError):
+            second_subject = Subject(code='testsubject2', department_id=1)
+            second_subject.save()
