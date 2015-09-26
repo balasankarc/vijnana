@@ -30,3 +30,11 @@ class AssignOrRemoveStaffForm(forms.Form):
                 for x in User.objects.all()
                 if x.status == 'teacher' or x.status == 'hod']
     staffselect = forms.MultipleChoiceField(choices=user_ids)
+
+
+class NewSubjectForm(forms.Form):
+    code = forms.CharField()
+    name = forms.CharField()
+    credit = forms.CharField()
+    course = forms.CharField()
+    semester = forms.CharField()

@@ -4,8 +4,8 @@ from django.db import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-from .forms import (AssignOrRemoveStaffForm, NewResourceForm, SearchForm, SignInForm,
-                    SignUpForm)
+from .forms import (AssignOrRemoveStaffForm, NewResourceForm, SearchForm,
+                    SignInForm, SignUpForm, NewSubjectForm)
 from .models import Department, Resource, Subject, User
 
 RESOURCE_TYPES = {
@@ -325,3 +325,30 @@ def remove_staff(request, subject_id):
                         'subject': subject
                       })
     return HttpResponseRedirect('/subject/'+subject_id)
+
+
+def new_subject(request):
+    department_list = Department.objects.all()
+    error = ''
+    if request.POST:
+        try:
+            form = NewSubjectForm(request.POST)
+            if form.is_valid():
+                input_code = form.cleaned_data['code']
+                input_name = form.cleaned_data['name']
+                input_credit = form.cleaned_data['credit']
+                input_course = form.cleaned_data['course']
+                input_semester = form.cleaned_data['semester']
+                input_department = current_user(request).department.id
+                subject = Subject(code=input_code, name=input_name,
+                                  credit=input_credit, course=input_course,
+                                  semester=input_semester,
+                                  department_id=input_department)
+                subject.save()
+                return HttpResponseRedirect('/subject/'+str(subject.id))
+        except IntegrityError:
+            error = 'Subject Code already exists'
+    return render(request, 'new_subject.html',
+                  {'department_list': department_list,
+                   'error': error
+                   })

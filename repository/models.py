@@ -34,9 +34,9 @@ class User(models.Model):
 
 
 class Subject(models.Model):
-    code = models.CharField(max_length=10)
+    code = models.CharField(max_length=10, unique=True)
     name = models.CharField(max_length=50)
-    credit = models.IntegerField()
+    credit = models.CharField(max_length=5)
     course = models.CharField(max_length=10)
     semester = models.CharField(max_length=10)
     department = models.ForeignKey(Department)

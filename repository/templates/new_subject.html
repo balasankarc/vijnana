@@ -1,0 +1,37 @@
+{% extends "master.html" %}
+{% block content %}
+{% if error %}
+<div class="alert alert-danger">
+    {{error}}
+</div>
+{% endif %}
+<div class="row">
+    <div style="margin:0 auto">
+        <form action="/new_subject/" method="post" class="form-signin">
+            {% csrf_token %}
+            <h2 class="form-signin-heading">Add New Subject</h2>
+            <input id="code" type="text" name="code" value="{{ input_code }}" placeholder="Subject Code" class="form-control" required>
+            <input id="name" type="text" name="name" value="{{ input_name }}" placeholder="Subject Name" class="form-control" required>
+            <input id="credit" type="text" name="credit" value="{{ input_credit }}" placeholder="Credit" class="form-control" required>
+            <select class="form-control" name='course' required>
+                <option selected="selected" value="">Course</option>
+                <option value='btech'>B.Tech</option>
+                <option value='mtech'>M.Tech</option>
+                <option value='mba'>MBA</option>
+            </select>
+            <select class="form-control" name='semester' required>
+                <option selected="selected" value="">Semester</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+            </select>
+            <button type="submit" class="btn btn-primary form-control">Create</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
