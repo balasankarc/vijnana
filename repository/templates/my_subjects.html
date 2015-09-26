@@ -8,11 +8,11 @@
     <table class='table table-bordered'>
         {% for subject in subject_list %}
         <tr>
-            <td style="width:5%;border-right:0px;vertical-align:middle">
+            <td style="width:5%;border-right:0px;vertical-align:top;padding-top:2%">
                 <a href="/subject/{{subject.id}}">{{subject.code}}
                 </a>
             </td>
-            <td style="border-left:0px">
+            <td style="border-left:0px;width:50%">
                 <a href="/subject/{{subject.id}}" style="font-size:20pt">
                     {{subject.name}}
                 </a>
@@ -21,6 +21,9 @@
                 {{subject.department.name}}
                 <br />
                 </p>
+            </td>
+            <td>
+                <p style="text-align:justify">{{subject.description}}</p>
             </td>
         </tr>
         {% endfor %}

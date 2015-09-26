@@ -45,6 +45,7 @@ class Subject(models.Model):
     department = models.ForeignKey(Department)
     staff = models.ManyToManyField(User, related_name="teachingsubjects")
     students = models.ManyToManyField(User, related_name="subscribedsubjects")
+    description = models.TextField(max_length=5000)
 
 
 class Resource(models.Model):
