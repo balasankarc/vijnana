@@ -15,21 +15,23 @@
             {% endif %}
             </div>
             <div class="col-md-6" style="text-align:right;margin-top:0;margin-bottom:0">
-                {% if not is_hod %}
-                    {% if not is_staff %}
-                        {% if not subscription_status %}
-                            <a href="/subject/{{subject.id}}/subscribe_me"><button class="btn btn-primary">Subscribe Me</button></a>
-                        {% else %}
-                            <a href="/subject/{{subject.id}}/unsubscribe_me"><button class="btn btn-danger">Unsubscribe</button></a>
+                {% if request.session.user %}
+                    {% if not is_hod %}
+                        {% if not is_staff %}
+                            {% if not subscription_status %}
+                                <a href="/subject/{{subject.id}}/subscribe_me"><button class="btn btn-primary">Subscribe Me</button></a>
+                            {% else %}
+                                <a href="/subject/{{subject.id}}/unsubscribe_me"><button class="btn btn-danger">Unsubscribe</button></a>
+                            {% endif %}
                         {% endif %}
-                    {% endif %}
-                {% else %}
-                    <a href="/subject/{{subject.id}}/assign_staff"><button style="margin-bottom:5px;" class="btn btn-primary">Add Staff</button></a>
-                    <br />
-                    {% if not has_staff %}
-                        <button class="btn btn-danger disabled">Remove Staff</button>
                     {% else %}
-                        <a href="/subject/{{subject.id}}/remove_staff"><button class="btn btn-danger">Remove Staff</button></a>
+                        <a href="/subject/{{subject.id}}/assign_staff"><button style="margin-bottom:5px;" class="btn btn-primary">Add Staff</button></a>
+                        <br />
+                        {% if not has_staff %}
+                            <button class="btn btn-danger disabled">Remove Staff</button>
+                        {% else %}
+                            <a href="/subject/{{subject.id}}/remove_staff"><button class="btn btn-danger">Remove Staff</button></a>
+                        {% endif %}
                     {% endif %}
                 {% endif %}
             </div>
