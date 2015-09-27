@@ -92,6 +92,7 @@ def user_signup(request):
                             department_id=input_department)
                 user.save()
                 request.session['user'] = input_username
+                request.session['usertype'] = user.status
                 return HttpResponseRedirect('/')
             except IntegrityError:
                 error = error + "Username already in use"
