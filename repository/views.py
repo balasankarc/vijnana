@@ -125,7 +125,7 @@ def new_resource(request):
                         subject=input_subject, resourcefile=input_file,
                         uploader=resource_uploader)
                 resource.save()
-                return HttpResponseRedirect('/')
+                return HttpResponseRedirect('/resource/'+str(resource.id))
             except Exception, e:
                 error = e
                 print error

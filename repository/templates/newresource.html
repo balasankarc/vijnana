@@ -1,6 +1,6 @@
 {% extends "master.html" %}
 {% block content %}
-{% if not request.session.usertype == 'teacher' %}
+{% if not request.session.usertype == 'teacher' and not request.session.usertype == 'hod' %}
 <div class="alert alert-danger">
     You don't have permission to access this page.
 </div>
