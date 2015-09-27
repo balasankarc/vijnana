@@ -29,3 +29,19 @@ class SubjectTests(TestCase):
         with self.assertRaises(IntegrityError):
             second_subject = Subject(code='testsubject2', department_id=1)
             second_subject.save()
+
+
+class LinkTests(TestCase):
+    def test_homepage(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_subject_exists(self):
+        first_subject = Subject(code='testsubject2', department_id=1)
+        first_subject.save()
+        response = self.client.get('/subject/1/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_subject_not_exists(self):
+        response = self.client.get('/subject/1/')
+        self.assertEqual(response.status_code, 404)
