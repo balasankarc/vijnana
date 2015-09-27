@@ -21,7 +21,10 @@ USER_STATUS = ['student', 'faculty', 'labstaff', 'administrator', 'hod']
 
 
 def current_user(request):
-    return User.objects.get(username=request.session['user'])
+    if 'user' in request.session:
+        return User.objects.get(username=request.session['user'])
+    else:
+        return None
 
 
 def home(request):
@@ -144,12 +147,6 @@ def get_resource(request, resource_id):
                       {
                         'error': 'The requested resource not found.'
                       }, status=404)
-    except:
-        return render(request, 'error.html',
-                      {
-                        'error': """Server encountered some error.
-                                 Contact Administrator."""
-                      }, status=500)
 
 
 def type_resource_list(request, type_name):
@@ -164,8 +161,8 @@ def type_resource_list(request, type_name):
                             'type': type_name
                           })
         else:
-            raise
-    except:
+            raise ObjectDoesNotExist
+    except ObjectDoesNotExist:
         return render(request, 'error.html',
                       {
                         'error': 'No resources under the requested category'
@@ -178,7 +175,6 @@ def search(request):
         try:
             form = SearchForm(request.POST)
             if form.is_valid():
-                print dir(form)
                 query = form.cleaned_data['query']
                 resource_list = Resource.objects.filter(title__contains=query)
                 if resource_list:
@@ -188,11 +184,8 @@ def search(request):
                                     'query': query
                                   })
                 else:
-                    raise
-            else:
-                raise
-        except Exception, e:
-            print e
+                    raise ObjectDoesNotExist
+        except ObjectDoesNotExist:
             return render(request, 'error.html',
                           {
                             'error': 'Searched returned no resources.'
@@ -207,58 +200,81 @@ def my_subjects(request):
         subject_list = user.teachingsubjects.all()
     else:
         subject_list = user.subscribedsubjects.all()
-    print subject_list
-    return render(request, 'my_subjects.html',
-                  {
-                    'subject_list': subject_list
-                  })
+    if subject_list:
+        return render(request, 'my_subjects.html',
+                      {
+                        'subject_list': subject_list,
+                      })
+    else:
+        return render(request, 'error.html',
+                      {
+                        'error': 'You are not subscribed to any subjects'
+                      }, status=404)
 
 
 def view_subject(request, subject_id):
-    subject = Subject.objects.get(id=subject_id)
-    resource_list = subject.resource_set.all()
-    subscription_status = True
-    is_hod = False
-    has_staff = False
-    is_staff = False
-    subject_staff_list = subject.staff.all()
-    if subject_staff_list:
-        has_staff = True
-    if 'user' in request.session:
-        user = current_user(request)
-        if subject not in user.subscribedsubjects.all():
-            subscription_status = False
-        if user.status == 'hod' and user.department == subject.department:
-            is_hod = True
-        if user in subject.staff.all():
-            is_staff = True
-    return render(request, 'subject_resource_list.html',
-                  {
-                    'subject': subject,
-                    'resource_list': resource_list,
-                    'subscription_status': subscription_status,
-                    'is_hod': is_hod,
-                    'is_staff': is_staff,
-                    'has_staff': has_staff,
-                    'subject_staff_list': subject_staff_list
-                  })
+    try:
+        subject = Subject.objects.get(id=subject_id)
+        resource_list = subject.resource_set.all()
+        subscription_status = True
+        is_hod = False
+        has_staff = False
+        is_staff = False
+        subject_staff_list = subject.staff.all()
+        if subject_staff_list:
+            has_staff = True
+        if 'user' in request.session:
+            user = current_user(request)
+            if subject not in user.subscribedsubjects.all():
+                subscription_status = False
+            if user.status == 'hod' and user.department == subject.department:
+                is_hod = True
+            if user in subject.staff.all():
+                is_staff = True
+        return render(request, 'subject_resource_list.html',
+                      {
+                        'subject': subject,
+                        'resource_list': resource_list,
+                        'subscription_status': subscription_status,
+                        'is_hod': is_hod,
+                        'is_staff': is_staff,
+                        'has_staff': has_staff,
+                        'subject_staff_list': subject_staff_list
+                      })
+    except ObjectDoesNotExist:
+        return render(request, 'error.html',
+                      {
+                        'error': 'The subject you requested does not exist.'
+                      }, status=404)
 
 
 def subscribe_me(request, subject_id):
-    subject = Subject.objects.get(id=subject_id)
-    subject.students.add(current_user(request))
-    subject.save()
-    return HttpResponseRedirect('/subject/'+subject_id)
+    try:
+        subject = Subject.objects.get(id=subject_id)
+        subject.students.add(current_user(request))
+        subject.save()
+        return HttpResponseRedirect('/subject/'+subject_id)
+    except ObjectDoesNotExist:
+        return render(request, 'error.html',
+                      {
+                        'error': 'The subject you requested does not exist.'
+                      }, status=404)
 
 
 def unsubscribe_me(request, subject_id):
-    subject = Subject.objects.get(id=subject_id)
-    if 'user' in request.session:
-        user = current_user(request)
-        if user in subject.students.all():
-            subject.students.remove(user)
-            subject.save()
-    return HttpResponseRedirect('/subject/'+subject_id)
+    try:
+        subject = Subject.objects.get(id=subject_id)
+        if 'user' in request.session:
+            user = current_user(request)
+            if user in subject.students.all():
+                subject.students.remove(user)
+                subject.save()
+        return HttpResponseRedirect('/subject/'+subject_id)
+    except ObjectDoesNotExist:
+        return render(request, 'error.html',
+                      {
+                        'error': 'The subject you requested does not exist.'
+                      }, status=404)
 
 
 def assign_staff(request, subject_id):
@@ -268,16 +284,13 @@ def assign_staff(request, subject_id):
         user = current_user(request)
         if user.status == 'hod' and user.department == subject.department:
             is_hod = True
-    if request.POST:
-        print "POST"
+    if request.POST and is_hod:
         try:
             form = AssignOrRemoveStaffForm(request.POST)
             if form.is_valid():
                 for staff_id in form.cleaned_data['staffselect']:
                     staff = User.objects.get(id=staff_id)
                     subject.staff.add(staff)
-            else:
-                print form
         except Exception, e:
             print e
     else:
@@ -286,7 +299,6 @@ def assign_staff(request, subject_id):
             staff_list[department.name] = [x for x in department.user_set.all()
                                            if x.status == 'teacher' or
                                            x.status == 'hod']
-        print staff_list
         return render(request, 'assign_staff.html',
                       {
                         'is_hod': is_hod,
@@ -311,8 +323,6 @@ def remove_staff(request, subject_id):
                     staff = User.objects.get(id=staff_id)
                     subject.staff.remove(staff)
                     subject.save()
-            else:
-                print form
         except Exception, e:
             print e
     else:
