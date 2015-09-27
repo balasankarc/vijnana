@@ -27,6 +27,14 @@ def current_user(request):
         return None
 
 
+def is_user_hod(request, subject):
+    user = current_user(request)
+    if user.status == 'hod' and user.department == subject.department:
+        return True
+    else:
+        return False
+
+
 def home(request):
     """Displays home page"""
     return render(request, 'home.html')
@@ -82,7 +90,7 @@ def user_signup(request):
         if form.is_valid():
             try:
                 input_username = form.cleaned_data['username']
-                input_password = form.cleaned_data['password']
+                input_password = form.cleaned_data['password'].encode('utf-8')
                 input_name = form.cleaned_data['fullname']
                 input_department = form.cleaned_data['department']
                 password_hash = bcrypt.hashpw(input_password, bcrypt.gensalt())
@@ -229,7 +237,7 @@ def view_subject(request, subject_id):
             if subject not in user.subscribedsubjects.all():
                 subscription_status = False
             if user.status == 'hod' and user.department == subject.department:
-                is_hod = True
+                is_hod = is_user_hod(request, subject)
             if user in subject.staff.all():
                 is_staff = True
         return render(request, 'subject_resource_list.html',
@@ -280,11 +288,7 @@ def unsubscribe_me(request, subject_id):
 
 def assign_staff(request, subject_id):
     subject = Subject.objects.get(id=subject_id)
-    is_hod = False
-    if 'user' in request.session:
-        user = current_user(request)
-        if user.status == 'hod' and user.department == subject.department:
-            is_hod = True
+    is_hod = is_user_hod(request, subject)
     if request.POST and is_hod:
         try:
             form = AssignOrRemoveStaffForm(request.POST)
