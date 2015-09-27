@@ -29,7 +29,7 @@ class User(models.Model):
     username = models.CharField(max_length=25, unique=True)
     password = models.CharField(max_length=100)
     name = models.CharField(max_length=50)
-    status = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, default='student')
     department = models.ForeignKey(Department)
 
 
