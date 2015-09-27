@@ -1,5 +1,6 @@
 *.pyc
 *.swp
+*.swo
 *.tmp
 *.sqlite3
 repository/uploads/resources/*
