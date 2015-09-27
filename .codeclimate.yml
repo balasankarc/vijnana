@@ -1,0 +1,5 @@
+language:
+    Python: true
+exclude_paths:
+- "repository/static/*"
+- "repository/tests.py"
