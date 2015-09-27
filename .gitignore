@@ -4,4 +4,3 @@
 *.tmp
 *.sqlite3
 repository/uploads/resources/*
-repository/migrations

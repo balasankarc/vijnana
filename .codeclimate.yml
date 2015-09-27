@@ -3,3 +3,4 @@ language:
 exclude_paths:
 - "repository/static/*"
 - "repository/tests.py"
+- "repository/migrations/*"
