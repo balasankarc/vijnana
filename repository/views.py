@@ -52,7 +52,7 @@ def user_signin(request):
             try:
                 user = User.objects.get(username=input_username)
                 username = user.username
-                password = user.password
+                password = user.password.encode('utf-8')
                 if bcrypt.hashpw(input_password, password) == password:
                     print "Success"
                     request.session['user'] = username
