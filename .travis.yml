@@ -4,7 +4,9 @@ python:
 env:
   - DJANGO_VERSION=1.7.9
 install: "pip install django bcrypt django-nose django-bootstrap3"
-script: 'python manage.py test'
+script: 
+    - "python manage.py test"
+    - "coverage run --source='.' manage.py test repository"
 before_install:
   - pip install codecov
 after_success:
