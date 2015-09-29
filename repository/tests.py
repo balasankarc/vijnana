@@ -2,21 +2,22 @@ from django.db import IntegrityError
 from django.test import TestCase
 
 from .models import Subject, User
+import bcrypt
 
 
 class UserTests(TestCase):
+
+    @classmethod
+    def setUp(inp):
+        password = bcrypt.hashpw('testuser0', bcrypt.gensalt())
+        first_user = User(
+            username='testuser0', password=password, department_id=1)
+        first_user.save()
 
     def test_user_department_not_null(self):
         first_user = User(username='testuser1')
         with self.assertRaises(IntegrityError):
             first_user.save()
-
-    def test_user_uniqueness(self):
-        first_user = User(username='testuser2', department_id=1)
-        first_user.save()
-        with self.assertRaises(IntegrityError):
-            second_user = User(username='testuser2', department_id=1)
-            second_user.save()
 
     def test_user_signup_missing_field(self):
         response = self.client.post("/sign_up/",
@@ -33,16 +34,38 @@ class UserTests(TestCase):
                                      'department': '1'})
         self.assertRedirects(response, '/')
         self.assertEqual(self.client.session['user'], 'testuser3')
-        user = User.objects.get(id=1)
+        user = User.objects.get(id=2)
         self.assertEqual(user.status, 'student')
-        response1 = self.client.get('/sign_out/')
-        self.assertRedirects(response1, '/')
+        response = self.client.get('/sign_out/')
+        self.assertRedirects(response, '/')
         self.assertNotIn('user', self.client.session)
+
+    def test_signin_success(self):
         response2 = self.client.post("/sign_in/",
-                                     {'username': 'testuser3',
-                                      'password': 'testuser3'})
+                                     {'username': 'testuser0',
+                                      'password': 'testuser0'})
         self.assertRedirects(response2, '/')
-        self.assertEqual(self.client.session['user'], 'testuser3')
+        self.assertEqual(self.client.session['user'], 'testuser0')
+
+    def test_incorrect_signin(self):
+        response2 = self.client.post("/sign_in/",
+                                     {'username': 'testuser0',
+                                      'password': 'testuser1'})
+        self.assertTemplateUsed(response2, 'signin.html')
+
+    def test_already_signedin(self):
+        response2 = self.client.post("/sign_in/",
+                                     {'username': 'testuser0',
+                                      'password': 'testuser0'})
+        response2 = self.client.get("/sign_in/")
+        self.assertRedirects(response2, '/')
+
+    def test_signup_already_signed_in(self):
+        response2 = self.client.post("/sign_in/",
+                                     {'username': 'testuser0',
+                                      'password': 'testuser0'})
+        response2 = self.client.get("/sign_up/")
+        self.assertRedirects(response2, '/')
 
 
 class SubjectTests(TestCase):
