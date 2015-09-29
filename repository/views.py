@@ -54,7 +54,6 @@ def user_signin(request):
                 username = user.username
                 password = user.password.encode('utf-8')
                 if bcrypt.hashpw(input_password, password) == password:
-                    print "Success"
                     request.session['user'] = username
                     request.session['usertype'] = user.status
                     return HttpResponseRedirect('/')
@@ -62,7 +61,6 @@ def user_signin(request):
                     raise ObjectDoesNotExist
             except ObjectDoesNotExist:
                 error = "Incorrect username or password"
-                print "Exception caught"
     else:
         if 'user' in request.session.keys():
             # If user already logged in, redirect to homepage
