@@ -4,3 +4,6 @@
 *.tmp
 *.sqlite3
 repository/uploads/resources/*
+.coverage
+coverage.xml
+htmlcov
