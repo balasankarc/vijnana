@@ -3,7 +3,7 @@
 *.swo
 *.tmp
 *.sqlite3
-repository/uploads/resources/*
+repository/uploads/*
 .coverage
 coverage.xml
 htmlcov
