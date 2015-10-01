@@ -204,21 +204,27 @@ def search(request):
         return render(request, 'search.html')
 
 
-def my_subjects(request):
+def my_subjects(request, username):
     user = current_user(request)
-    if user.status == 'teacher':
-        subject_list = user.teachingsubjects.all()
-    else:
-        subject_list = user.subscribedsubjects.all()
-    if subject_list:
-        return render(request, 'my_subjects.html',
-                      {
-                        'subject_list': subject_list,
-                      })
+    if user:
+        if user.status == 'teacher':
+            subject_list = user.teachingsubjects.all()
+        else:
+            subject_list = user.subscribedsubjects.all()
+        if subject_list:
+            return render(request, 'my_subjects.html',
+                          {
+                            'subject_list': subject_list,
+                          })
+        else:
+            return render(request, 'error.html',
+                          {
+                            'error': 'You are not subscribed to any subjects'
+                          }, status=404)
     else:
         return render(request, 'error.html',
                       {
-                        'error': 'You are not subscribed to any subjects'
+                        'error': 'You are not logged in.'
                       }, status=404)
 
 
@@ -397,14 +403,16 @@ def upload_profilepicture(request, username):
                     image = request.FILES['image']
                     w, h = get_image_dimensions(image)
                     if w < 200 or h < 200 or w > 1000 or h > 1000:
-                        error = "Image dimension should be between 500x500 and 1000x1000"
+                        error = """Image dimension should be between 500x500
+                        and 1000x1000"""
                         raise
                     if p.picture:
                         os.remove(p.picture.path)
                     p.picture = image
                     p.save()
                     print p.picture.path
-                    return HttpResponseRedirect('/user/'+user.username+'/crop_profilepicture')
+                    returnpath = '/user/'+user.username+'/crop_profilepicture'
+                    return HttpResponseRedirect(returnpath)
                 except:
                     return render(request, 'uploadprofilepicture.html',
                                   {'user': user, 'error': error})
