@@ -28,10 +28,22 @@ urlpatterns = patterns('',
                            'repository.views.assign_staff'),
                        url(r'^search/$', 'repository.views.search'),
                        url(r'^my_subjects/$', 'repository.views.my_subjects'),
+                       url(r'^user/(?P<username>[a-zA-Z _0-9]+)(/)?$',
+                           'repository.views.profile'),
+                       url(r'^user/(?P<username>[a-zA-Z _0-9]+)/upload_profilepicture(/)?$',
+                           'repository.views.upload_profilepicture'),
+                       url(r'^user/(?P<username>[a-zA-Z _0-9]+)/crop_profilepicture(/)?$',
+                           'repository.views.crop_profilepicture'),
                        url(r'^uploads/resources/(?P<path>.*)$',
                            'django.views.static.serve',
                            {
                             'document_root': settings.MEDIA_ROOT + 'resources',
                            }
                            ),
+                       url(r'^uploads/profile_pictures/(?P<path>.*)$',
+                           'django.views.static.serve',
+                           {
+                            'document_root': settings.MEDIA_ROOT + 'profile_pictures',
+                           }
+                           )
                        )

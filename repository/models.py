@@ -20,6 +20,13 @@ def set_filename(instance, filename):
     return os.path.join('resources', outfilename)
 
 
+def set_profilepicturename(instance, filename):
+    filenamesplit = os.path.splitext(filename)
+    extension = filenamesplit[1]
+    name = instance.user.username + extension
+    return os.path.join('profile_pictures', name)
+
+
 class Department(models.Model):
     name = models.CharField(max_length=50)
     abbreviation = models.CharField(max_length=10)
@@ -29,8 +36,15 @@ class User(models.Model):
     username = models.CharField(max_length=25, unique=True)
     password = models.CharField(max_length=100)
     name = models.CharField(max_length=50)
-    status = models.CharField(max_length=20, default='student')
+    status = models.CharField(max_length=20)
     department = models.ForeignKey(Department)
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User)
+    address = models.TextField()
+    picture = models.ImageField(upload_to=set_profilepicturename)
+    bloodgroup = models.CharField(max_length=5)
 
 
 class Subject(models.Model):

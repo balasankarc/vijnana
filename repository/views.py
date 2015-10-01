@@ -1,12 +1,17 @@
+import os
+
 import bcrypt
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.images import get_image_dimensions
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from PIL import Image
 
-from .forms import (AssignOrRemoveStaffForm, NewResourceForm, SearchForm,
-                    SignInForm, SignUpForm, NewSubjectForm)
-from .models import Department, Resource, Subject, User
+from .forms import (AssignOrRemoveStaffForm, NewResourceForm, NewSubjectForm,
+                    ProfilePictureCropForm, ProfilePictureUploadForm,
+                    SearchForm, SignInForm, SignUpForm)
+from .models import Department, Profile, Resource, Subject, User
 
 RESOURCE_TYPES = {
         'Presentation': 'presentation',
@@ -363,3 +368,89 @@ def new_subject(request):
                   {'department_list': department_list,
                    'error': error
                    })
+
+
+def upload_profilepicture(request, username):
+    user = User.objects.get(username=username)
+    if not user:
+        return render(request, 'error.html',
+                      {
+                        'error': 'The user you requested does not exist.'
+                      }, status=404)
+    elif user != current_user(request):
+        return render(request, 'error.html',
+                      {
+                        'error': 'You are not permitted to do this.'
+                      }, status=404)
+    else:
+        try:
+            p = user.profile
+        except:
+            p = Profile(user_id=user.id)
+            p.save()
+        if request.POST:
+            print "Post"
+            print p.user.username
+            form = ProfilePictureUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                try:
+                    image = request.FILES['image']
+                    w, h = get_image_dimensions(image)
+                    if w < 200 or h < 200 or w > 1000 or h > 1000:
+                        error = "Image dimension should be between 500x500 and 1000x1000"
+                        raise
+                    if p.picture:
+                        os.remove(p.picture.path)
+                    p.picture = image
+                    p.save()
+                    print p.picture.path
+                    return HttpResponseRedirect('/user/'+user.username+'/crop_profilepicture')
+                except:
+                    return render(request, 'uploadprofilepicture.html',
+                                  {'user': user, 'error': error})
+            else:
+                return render(request, 'uploadprofilepicture.html',
+                              {'user': user})
+        else:
+            return render(request, 'uploadprofilepicture.html', {'user': user})
+        return HttpResponseRedirect('/user/' + user.username)
+
+
+def crop_profilepicture(request, username):
+    user = User.objects.get(username=username)
+    if not user:
+        return render(request, 'error.html',
+                      {
+                        'error': 'The user you requested does not exist.'
+                      }, status=404)
+    elif user != current_user(request):
+        return render(request, 'error.html',
+                      {
+                        'error': 'You are not permitted to do this.'
+                      }, status=404)
+    else:
+        user = User.objects.get(username=username)
+        if request.POST:
+            if user.profile.picture:
+                form = ProfilePictureCropForm(request.POST)
+                if form.is_valid():
+                    x1 = int(float(form.cleaned_data['x1']))
+                    y1 = int(float(form.cleaned_data['y1']))
+                    x2 = int(float(form.cleaned_data['x2']))
+                    y2 = int(float(form.cleaned_data['y2']))
+                    image = Image.open(user.profile.picture.path)
+                    cropped_image = image.crop((x1, y1, x2, y2))
+                    cropped_image.save(user.profile.picture.path)
+                    return HttpResponseRedirect('/user/'+user.username)
+                else:
+                    print "Failure"
+                    print form
+            else:
+                return HttpResponseRedirect('/user/'+user.username)
+        else:
+            return render(request, 'cropprofilepicture.html', {'user': user})
+
+
+def profile(request, username):
+    user = User.objects.get(username=username)
+    return render(request, 'profile.html', {'user': user})

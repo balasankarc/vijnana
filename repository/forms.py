@@ -38,3 +38,16 @@ class NewSubjectForm(forms.Form):
     credit = forms.CharField()
     course = forms.CharField()
     semester = forms.CharField()
+
+
+class ProfilePictureUploadForm(forms.Form):
+    image = forms.ImageField()
+
+
+class ProfilePictureCropForm(forms.Form):
+    x1 = forms.CharField()
+    y1 = forms.CharField()
+    x2 = forms.CharField()
+    y2 = forms.CharField()
+    w = forms.CharField()
+    h = forms.CharField()

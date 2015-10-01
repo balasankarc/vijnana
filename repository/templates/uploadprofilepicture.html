@@ -1,0 +1,18 @@
+{% extends "master.html" %}
+{% block content %}
+{% if error %}
+<div class="alert alert-danger">
+    {{error}}
+</div>
+{% endif %}
+<div class="row">
+    <div style="margin:0 auto">
+        <form action="/user/{{user.username}}/upload_profilepicture/" method="post" class="form-signin" enctype=multipart/form-data>
+            {% csrf_token %}
+            <h2 class="form-signin-heading">Upload profile picture</h2>
+            <input type="file" id="image" name="image" class="form-control" required>
+            <button type="submit" class="btn btn-primary form-control">Upload</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

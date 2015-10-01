@@ -1,0 +1,86 @@
+{% extends "master.html" %}
+{% block content %}
+{% if error %}
+<div class="alert alert-danger">
+    {{error}}
+</div>
+{% endif %}
+<style>
+.jcrop-centered
+{
+    display: inline-block;
+}
+.crop-image-wrapper
+{
+    text-align: center;
+}
+</style>
+<script type="text/javascript">
+
+jQuery(function($){
+    var jcrop_api;
+    $('#target').Jcrop({
+        addClass: 'jcrop-centered',
+        onChange:   showCoords,
+        onSelect:   showCoords,
+        onRelease:  clearCoords,
+    },function(){
+        jcrop_api = this;
+    });
+
+    $('#coords').on('change','input',function(e){
+        var x1 = $('#x1').val(),
+        x2 = $('#x2').val(),
+        y1 = $('#y1').val(),
+        y2 = $('#y2').val();
+        jcrop_api.setSelect([x1,y1,x2,y2]);
+    });
+
+});
+
+// Simple event handler, called from onChange and onSelect
+// event handlers, as per the Jcrop invocation above
+function showCoords(c)
+{
+    $('#x1').val(c.x);
+    $('#y1').val(c.y);
+    $('#x2').val(c.x2);
+    $('#y2').val(c.y2);
+    $('#w').val(c.w);
+    $('#h').val(c.h);
+};
+
+function clearCoords()
+{
+    $('#coords input').val('');
+};
+
+
+
+</script>
+
+
+<div class="row">
+    <div style="margin:0 auto">
+        <h2 class="form-signin-heading">Crop profile picture</h2>
+        <div class="crop-image-wrapper">
+            <img style="margin:0 auto" src="/uploads/{{user.profile.picture.url}}" id="target">
+        </div>
+        <form id="coords"
+              class="coords form-signin"
+              action="/user/{{user.username}}/crop_profilepicture/" method="post">
+            {% csrf_token %}
+            <div class="inline-labels" style="visibility:hidden">
+                <label>X1 <input type="text" size="4" id="x1" name="x1" /></label>
+                <label>Y1 <input type="text" size="4" id="y1" name="y1" /></label>
+                <label>X2 <input type="text" size="4" id="x2" name="x2" /></label>
+                <label>Y2 <input type="text" size="4" id="y2" name="y2" /></label>
+                <label>W <input type="text" size="4" id="w" name="w" /></label>
+                <label>H <input type="text" size="4" id="h" name="h" /></label>
+            </div>
+            <button type="submit" class="btn btn-primary form-control">Upload</button>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "master.html" %}
+{% block content %}
+{% if error %}
+<div class="alert alert-danger">
+    {{error}}
+</div>
+{% endif %}
+<div class="row">
+    <div class="col-md-4">
+        <img src="/uploads/{{user.profile.picture.url}}" alt="{{user.username}}" width="200px"/>
+    </div>
+    <div class="col-md-8">
+        <h2>{{user.name}}</h2>
+        <h3>{{user.department.name}}</h2>
+    </div>
+</div>
+{% endblock %}
