@@ -42,7 +42,11 @@ def is_user_hod(request, subject):
 
 def home(request):
     """Displays home page"""
-    return render(request, 'home.html')
+    user = current_user(request)
+    if user:
+        return render(request, 'profile.html', {'user': user})
+    else:
+        return render(request, 'home.html')
 
 
 def user_signin(request):
