@@ -5,13 +5,58 @@
     {{error}}
 </div>
 {% endif %}
-<div class="row">
-    <div class="col-md-4">
-        <img src="/uploads/{{user.profile.picture.url}}" alt="{{user.username}}" width="200px"/>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">User Details</h3>
     </div>
-    <div class="col-md-8">
-        <h2>{{user.name}}</h2>
-        <h3>{{user.department.name}}</h2>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-md-2">
+                <img src="/uploads/{{user.profile.picture.url}}" alt="{{user.username}}" width="100px"/>
+            </div>
+            <div class="col-md-5">
+                <h2 style="margin-top:0">{{user.name}}</h2>
+                <h3>{{user.department.name}}</h3>
+            </div>
+            <div class="col-md-5" style="border-left:1px solid">
+                <table>
+                    <tr>
+                        <td style="vertical-align:top;padding-top:5px;padding-right:10px"><span class="glyphicon glyphicon-home" aria-hidden="true"></span></td>
+                        <td style="margin-top:0">{{user.profile.address|linebreaksbr}}</td>
+                    </tr>
+                    <tr>
+                    <td><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></td>
+                    <td><a href="mailto:{{user.profile.email}}">{{user.profile.email}}</a></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">User Resources</h3>
+    </div>
+    <div class="panel-body" style="padding-top:0px;">
+        <table class='table' style="margin-top:0">
+            {% for resource in user.resource_set.all %}
+            <tr style="margin-top:0">
+                <td style="border:0px;border-bottom:1px solid">
+                    <a href="/subject/{{resource.id}}" style="font-size:20pt">
+                        {{resource.title}}
+                    </a>
+                    <br />
+                    <p style="font-size:small">
+                    {{resource.subject.name}}
+                    <br />
+                    <p style="font-size:small">
+                    {{resource.subject.department.name}}
+                    </p>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
 {% endblock %}
