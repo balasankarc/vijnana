@@ -45,7 +45,7 @@ class Profile(models.Model):
     address = models.TextField()
     picture = models.ImageField(upload_to=set_profilepicturename)
     bloodgroup = models.CharField(max_length=5)
-    email = models.EmailField()
+    email = models.EmailField(blank=True)
     phone = models.CharField(max_length=15)
 
 
