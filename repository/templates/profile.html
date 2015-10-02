@@ -20,14 +20,24 @@
             </div>
             <div class="col-md-5" style="border-left:1px solid">
                 <table>
+                    {% if user.profile.address %}
                     <tr>
-                        <td style="vertical-align:top;padding-top:5px;padding-right:10px"><span class="glyphicon glyphicon-home" aria-hidden="true"></span></td>
+                        <td style="vertical-align:top;padding-top:5px;padding-right:10px"><span class="glyphicon glyphicon-home" style="color:brown" aria-hidden="true"></span></td>
                         <td style="margin-top:0">{{user.profile.address|linebreaksbr}}</td>
                     </tr>
+                    {% endif %}
+                    {% if user.profile.email %}
                     <tr>
-                    <td><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></td>
-                    <td><a href="mailto:{{user.profile.email}}">{{user.profile.email}}</a></td>
+                        <td><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></td>
+                        <td><a href="mailto:{{user.profile.email}}">{{user.profile.email}}</a></td>
                     </tr>
+                    {% endif %}
+                    {% if user.profile.bloodgroup %}
+                    <tr>
+                        <td><span class="glyphicon glyphicon-tint" style="color:red" aria-hidden="true"></span></td>
+                        <td>{{user.profile.bloodgroup}}</td>
+                    </tr>
+                    {% endif %}
                 </table>
             </div>
         </div>

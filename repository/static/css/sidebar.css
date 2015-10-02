@@ -25,8 +25,7 @@
     height: 100%;
     margin-left: -15%;
     overflow-y: auto;
-    background: #F1F1EE;
-    border-right:solid 1px;
+    border-right:dashed 1px grey;
     -webkit-transition: all 0.5s ease;
     -moz-transition: all 0.5s ease;
     -o-transition: all 0.5s ease;
