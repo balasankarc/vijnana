@@ -100,9 +100,6 @@
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
                                             <li><a href="/user/{{request.session.user}}/">Profile</a>
                                                 <li><a href="/user/{{request.session.user}}/subjects/">My Subjects</a></li>
-                                            {% if request.session.usertype == 'teacher' %}
-                                            {% endif %}
-                                            <li><a href="edit_profile">Edit Profile</a></li>
                                             <li role="separator" class="divider"></li>
                                             <li><a href="/sign_out/">SIgn Out</a></li>
                                         </ul>
