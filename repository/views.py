@@ -212,7 +212,7 @@ def search(request):
 def my_subjects(request, username):
     user = current_user(request)
     if user:
-        if user.status == 'teacher':
+        if user.status == 'teacher' or user.status == 'hod':
             subject_list = user.teachingsubjects.all()
         else:
             subject_list = user.subscribedsubjects.all()

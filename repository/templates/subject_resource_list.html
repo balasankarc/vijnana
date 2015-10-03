@@ -9,7 +9,7 @@
             {% if has_staff %}
                 <ul style="list-style-type:none;">
                 {% for staff in subject_staff_list %}
-                    <li>{{staff.name}}</li>
+                <li><a href="/user/{{staff.username}}/">{{staff.name}}</a></li>
                 {% endfor %}
                 </ul>
             {% endif %}
