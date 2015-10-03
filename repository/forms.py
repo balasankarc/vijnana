@@ -51,3 +51,10 @@ class ProfilePictureCropForm(forms.Form):
     y2 = forms.CharField()
     w = forms.CharField()
     h = forms.CharField()
+
+
+class EditProfileForm(forms.Form):
+    name = forms.CharField(required=True)
+    address = forms.CharField(widget=forms.Textarea, required=False)
+    email = forms.EmailField(required=False)
+    bloodgroup = forms.CharField(required=False)

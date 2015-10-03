@@ -1,0 +1,43 @@
+{% extends "master.html" %}
+{% block content %}
+{% if error %}
+<div class="alert alert-danger">
+    {{error}}
+</div>
+{% endif %}
+{% if not user.username == request.session.user %}
+<div class="alert alert-danger">
+    You are not permitted to access this page.
+</div>
+{% else %}
+<div class="row">
+    <div class="col-md-5">
+        <div class="row">
+            <div class style="margin-left:15%">
+                <img src="/uploads/{{user.profile.picture.url}}" alt="{{user.username}}" width="100px" style="margin-top:10%"/> <br /> <br />
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Profile Picture<span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a href="/user/{{user.username}}/upload_profilepicture">Edit Profile Picture</a></li>
+                        <li><a href="/user/{{user.username}}/remove_profile_picture">Remove Profile Picture</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <form action="/user/{{user.username}}/edit/" method="post" class="form-signin" style="margin:0">
+            {% csrf_token %}
+            <h2 class="form-signin-heading">Edit User Details</h2>
+            <input id="name" type="text" name="name" value="{{ current_name }}" placeholder="Name" class="form-control" >
+            <textarea id="address" name="address" placeholder="Address" class="form-control"  multiline="true">{{current_address}}</textarea>
+            <input id="email" type="email" name="email" value="{{ current_email }}" placeholder="Email" class="form-control" >
+            <input id="bloodgroup" type="bloodgroup" name="bloodgroup" value="{{ current_bloodgroup }}" placeholder="Blood Group" class="form-control" >
+            <button type="submit" class="btn btn-primary form-control">Register</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

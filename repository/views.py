@@ -8,19 +8,20 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from PIL import Image
 
-from .forms import (AssignOrRemoveStaffForm, NewResourceForm, NewSubjectForm,
-                    ProfilePictureCropForm, ProfilePictureUploadForm,
-                    SearchForm, SignInForm, SignUpForm)
+from .forms import (AssignOrRemoveStaffForm, EditProfileForm, NewResourceForm,
+                    NewSubjectForm, ProfilePictureCropForm,
+                    ProfilePictureUploadForm, SearchForm, SignInForm,
+                    SignUpForm)
 from .models import Department, Profile, Resource, Subject, User
 
 RESOURCE_TYPES = {
-        'Presentation': 'presentation',
-        'Paper Publication': 'paper_publication',
-        'Subject Note': 'subject_note',
-        'Project Thesis': 'project_thesis',
-        'Seminar Report': 'seminar_report',
-        'Previous Question Paper': 'previous_question_paper'
-        }
+    'Presentation': 'presentation',
+    'Paper Publication': 'paper_publication',
+    'Subject Note': 'subject_note',
+    'Project Thesis': 'project_thesis',
+    'Seminar Report': 'seminar_report',
+    'Previous Question Paper': 'previous_question_paper'
+}
 
 USER_STATUS = ['student', 'faculty', 'labstaff', 'administrator', 'hod']
 
@@ -130,16 +131,16 @@ def new_resource(request):
                 input_title = form.cleaned_data['title']
                 input_category = form.cleaned_data['category']
                 input_subject = Subject.objects.get(
-                        id=form.cleaned_data['subject'])
+                    id=form.cleaned_data['subject'])
                 resource_uploader = User.objects.get(
-                        username=request.session['user'])
+                    username=request.session['user'])
                 input_file = request.FILES['resourcefile']
                 resource = Resource(
-                        title=input_title, category=input_category,
-                        subject=input_subject, resourcefile=input_file,
-                        uploader=resource_uploader)
+                    title=input_title, category=input_category,
+                    subject=input_subject, resourcefile=input_file,
+                    uploader=resource_uploader)
                 resource.save()
-                return HttpResponseRedirect('/resource/'+str(resource.id))
+                return HttpResponseRedirect('/resource/' + str(resource.id))
             except Exception, e:
                 error = e
                 print error
@@ -159,7 +160,7 @@ def get_resource(request, resource_id):
     except ObjectDoesNotExist:
         return render(request, 'error.html',
                       {
-                        'error': 'The requested resource not found.'
+                          'error': 'The requested resource not found.'
                       }, status=404)
 
 
@@ -171,15 +172,15 @@ def type_resource_list(request, type_name):
         if resources:
             return render(request, 'type_resource_list.html',
                           {
-                            'resource_list': resources,
-                            'type': type_name
+                              'resource_list': resources,
+                              'type': type_name
                           })
         else:
             raise ObjectDoesNotExist
     except ObjectDoesNotExist:
         return render(request, 'error.html',
                       {
-                        'error': 'No resources under the requested category'
+                          'error': 'No resources under the requested category'
                       }, status=404)
 
 
@@ -194,15 +195,15 @@ def search(request):
                 if resource_list:
                     return render(request, 'search.html',
                                   {
-                                    'resource_list': resource_list,
-                                    'query': query
+                                      'resource_list': resource_list,
+                                      'query': query
                                   })
                 else:
                     raise ObjectDoesNotExist
         except ObjectDoesNotExist:
             return render(request, 'error.html',
                           {
-                            'error': 'Searched returned no resources.'
+                              'error': 'Searched returned no resources.'
                           }, status=404)
     else:
         return render(request, 'search.html')
@@ -218,17 +219,17 @@ def my_subjects(request, username):
         if subject_list:
             return render(request, 'my_subjects.html',
                           {
-                            'subject_list': subject_list,
+                              'subject_list': subject_list,
                           })
         else:
             return render(request, 'error.html',
                           {
-                            'error': 'You are not subscribed to any subjects'
+                              'error': 'You are not subscribed to any subjects'
                           }, status=404)
     else:
         return render(request, 'error.html',
                       {
-                        'error': 'You are not logged in.'
+                          'error': 'You are not logged in.'
                       }, status=404)
 
 
@@ -253,18 +254,18 @@ def view_subject(request, subject_id):
                 is_staff = True
         return render(request, 'subject_resource_list.html',
                       {
-                        'subject': subject,
-                        'resource_list': resource_list,
-                        'subscription_status': subscription_status,
-                        'is_hod': is_hod,
-                        'is_staff': is_staff,
-                        'has_staff': has_staff,
-                        'subject_staff_list': subject_staff_list
+                          'subject': subject,
+                          'resource_list': resource_list,
+                          'subscription_status': subscription_status,
+                          'is_hod': is_hod,
+                          'is_staff': is_staff,
+                          'has_staff': has_staff,
+                          'subject_staff_list': subject_staff_list
                       })
     except ObjectDoesNotExist:
         return render(request, 'error.html',
                       {
-                        'error': 'The subject you requested does not exist.'
+                          'error': 'The subject you requested does not exist.'
                       }, status=404)
 
 
@@ -273,11 +274,11 @@ def subscribe_me(request, subject_id):
         subject = Subject.objects.get(id=subject_id)
         subject.students.add(current_user(request))
         subject.save()
-        return HttpResponseRedirect('/subject/'+subject_id)
+        return HttpResponseRedirect('/subject/' + subject_id)
     except ObjectDoesNotExist:
         return render(request, 'error.html',
                       {
-                        'error': 'The subject you requested does not exist.'
+                          'error': 'The subject you requested does not exist.'
                       }, status=404)
 
 
@@ -289,11 +290,11 @@ def unsubscribe_me(request, subject_id):
             if user in subject.students.all():
                 subject.students.remove(user)
                 subject.save()
-        return HttpResponseRedirect('/subject/'+subject_id)
+        return HttpResponseRedirect('/subject/' + subject_id)
     except ObjectDoesNotExist:
         return render(request, 'error.html',
                       {
-                        'error': 'The subject you requested does not exist.'
+                          'error': 'The subject you requested does not exist.'
                       }, status=404)
 
 
@@ -317,11 +318,11 @@ def assign_staff(request, subject_id):
                                            x.status == 'hod']
         return render(request, 'assign_staff.html',
                       {
-                        'is_hod': is_hod,
-                        'staff_list': staff_list,
-                        'subject': subject
+                       'is_hod': is_hod,
+                       'staff_list': staff_list,
+                       'subject': subject
                       })
-    return HttpResponseRedirect('/subject/'+subject_id)
+    return HttpResponseRedirect('/subject/' + subject_id)
 
 
 def remove_staff(request, subject_id):
@@ -346,11 +347,11 @@ def remove_staff(request, subject_id):
         print staff_list
         return render(request, 'remove_staff.html',
                       {
-                        'is_hod': is_hod,
-                        'staff_list': staff_list,
-                        'subject': subject
+                       'is_hod': is_hod,
+                       'staff_list': staff_list,
+                       'subject': subject
                       })
-    return HttpResponseRedirect('/subject/'+subject_id)
+    return HttpResponseRedirect('/subject/' + subject_id)
 
 
 def new_subject(request):
@@ -371,7 +372,7 @@ def new_subject(request):
                                   semester=input_semester,
                                   department_id=input_department)
                 subject.save()
-                return HttpResponseRedirect('/subject/'+str(subject.id))
+                return HttpResponseRedirect('/subject/' + str(subject.id))
         except IntegrityError:
             error = 'Subject Code already exists'
     return render(request, 'new_subject.html',
@@ -385,12 +386,12 @@ def upload_profilepicture(request, username):
     if not user:
         return render(request, 'error.html',
                       {
-                        'error': 'The user you requested does not exist.'
+                       'error': 'The user you requested does not exist.'
                       }, status=404)
     elif user != current_user(request):
         return render(request, 'error.html',
                       {
-                        'error': 'You are not permitted to do this.'
+                       'error': 'You are not permitted to do this.'
                       }, status=404)
     else:
         try:
@@ -415,7 +416,8 @@ def upload_profilepicture(request, username):
                     p.picture = image
                     p.save()
                     print p.picture.path
-                    returnpath = '/user/'+user.username+'/crop_profilepicture'
+                    returnpath = '/user/' + \
+                        user.username + '/crop_profilepicture'
                     return HttpResponseRedirect(returnpath)
                 except:
                     return render(request, 'uploadprofilepicture.html',
@@ -433,12 +435,12 @@ def crop_profilepicture(request, username):
     if not user:
         return render(request, 'error.html',
                       {
-                        'error': 'The user you requested does not exist.'
+                       'error': 'The user you requested does not exist.'
                       }, status=404)
     elif user != current_user(request):
         return render(request, 'error.html',
                       {
-                        'error': 'You are not permitted to do this.'
+                       'error': 'You are not permitted to do this.'
                       }, status=404)
     else:
         user = User.objects.get(username=username)
@@ -453,12 +455,12 @@ def crop_profilepicture(request, username):
                     image = Image.open(user.profile.picture.path)
                     cropped_image = image.crop((x1, y1, x2, y2))
                     cropped_image.save(user.profile.picture.path)
-                    return HttpResponseRedirect('/user/'+user.username)
+                    return HttpResponseRedirect('/user/' + user.username)
                 else:
                     print "Failure"
                     print form
             else:
-                return HttpResponseRedirect('/user/'+user.username)
+                return HttpResponseRedirect('/user/' + user.username)
         else:
             return render(request, 'cropprofilepicture.html', {'user': user})
 
@@ -466,3 +468,40 @@ def crop_profilepicture(request, username):
 def profile(request, username):
     user = User.objects.get(username=username)
     return render(request, 'profile.html', {'user': user})
+
+
+def edit_user(request, username):
+    user = User.objects.get(username=username)
+    current_name = user.name or ""
+    current_address = user.profile.address or ""
+    current_email = user.profile.email or ""
+    current_bloodgroup = user.profile.bloodgroup or ""
+    if request.POST:
+        form = EditProfileForm(request.POST)
+        try:
+            if form.is_valid():
+                print "Here"
+                print form
+                name = form.cleaned_data['name'] or ""
+                address = form.cleaned_data['address'] or ""
+                email = form.cleaned_data['email'] or ""
+                bloodgroup = form.cleaned_data['bloodgroup'] or ""
+                user.name = name
+                p = user.profile
+                p.address = address
+                p.email = email
+                p.bloodgroup = bloodgroup
+                p.save()
+                user.save()
+                return HttpResponseRedirect('/user/'+user.username)
+        except Exception, e:
+            print e
+
+    else:
+        return render(request, 'edit.html',
+                      {'user': user,
+                       'current_name': current_name,
+                       'current_address': current_address,
+                       'current_email': current_email,
+                       'current_bloodgroup': current_bloodgroup,
+                       })
