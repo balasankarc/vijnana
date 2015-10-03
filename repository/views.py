@@ -6,13 +6,14 @@ from django.core.files.images import get_image_dimensions
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from openpyxl import load_workbook
 from PIL import Image
 
 from .forms import (AssignOrRemoveStaffForm, EditProfileForm, NewResourceForm,
                     NewSubjectForm, ProfilePictureCropForm,
                     ProfilePictureUploadForm, SearchForm, SignInForm,
                     SignUpForm)
-from .models import Department, Profile, Resource, Subject, User
+from .models import Department, Profile, Resource, Subject, User, Question
 
 RESOURCE_TYPES = {
     'Presentation': 'presentation',
@@ -505,3 +506,20 @@ def edit_user(request, username):
                        'current_email': current_email,
                        'current_bloodgroup': current_bloodgroup,
                        })
+
+
+def read_excel_file(excelfilepath):
+    workbook = load_workbook(filename=excelfilepath)
+    for row in workbook.worksheets[0].rows:
+        questiontext = row[1]
+        questionmodule = row[2]
+        questioncategory = row[3]
+        question = Question(text=questiontext,
+                            module=questionmodule,
+                            category=questioncategory
+                            )
+        question.save()
+
+
+def upload_question_bank(request):
+    pass

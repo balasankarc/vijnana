@@ -67,3 +67,9 @@ class Resource(models.Model):
     subject = models.ForeignKey(Subject)
     resourcefile = models.FileField(upload_to=set_filename)
     uploader = models.ForeignKey(User)
+
+
+class Question(models.Model):
+    text = models.CharField()
+    module = models.IntegerField()
+    category = models.CharField()
