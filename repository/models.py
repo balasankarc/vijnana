@@ -70,6 +70,6 @@ class Resource(models.Model):
 
 
 class Question(models.Model):
-    text = models.CharField()
+    text = models.CharField(max_length=5000)
     module = models.IntegerField()
-    category = models.CharField()
+    category = models.CharField(max_length=50)
