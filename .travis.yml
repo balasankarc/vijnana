@@ -3,7 +3,7 @@ python:
     - "2.7"
 env:
   - DJANGO_VERSION=1.7.9
-install: "pip install django bcrypt django-nose django-bootstrap3 pillow"
+install: "pip install -r requirements.txt"
 script: 
     - "python manage.py test"
     - "coverage run --source='.' manage.py test repository"
