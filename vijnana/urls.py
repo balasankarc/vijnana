@@ -20,6 +20,10 @@ urlpatterns = patterns('',
                            'repository.views.view_subject'),
                        url(r'subject/(?P<subject_id>[0-9]+)/subscribe_me$',
                            'repository.views.subscribe_me'),
+                       url(r'subject/(?P<subject_id>[0-9]+)/upload_questionbank(/)?$',
+                           'repository.views.upload_question_bank'),
+                       url(r'subject/(?P<subject_id>[0-9]+)/generate_questionpaper(/)?$',
+                           'repository.views.generate_question_paper'),
                        url(r'subject/(?P<subject_id>[0-9]+)/unsubscribe_me$',
                            'repository.views.unsubscribe_me'),
                        url(r'subject/(?P<subject_id>[0-9]+)/remove_staff$',
@@ -31,7 +35,6 @@ urlpatterns = patterns('',
                            'repository.views.my_subjects'),
                        url(r'^user/(?P<username>[a-zA-Z _0-9]+)/edit(/)?$',
                            'repository.views.edit_user'),
-
                        url(r'^user/(?P<username>[a-zA-Z _0-9]+)(/)?$',
                            'repository.views.profile'),
                        url(r'^user/(?P<username>[a-zA-Z _0-9]+)/upload_profilepicture(/)?$',
@@ -41,13 +44,13 @@ urlpatterns = patterns('',
                        url(r'^uploads/resources/(?P<path>.*)$',
                            'django.views.static.serve',
                            {
-                            'document_root': settings.MEDIA_ROOT + 'resources',
+                           'document_root': settings.MEDIA_ROOT + 'resources',
                            }
                            ),
                        url(r'^uploads/profile_pictures/(?P<path>.*)$',
                            'django.views.static.serve',
                            {
-                            'document_root': settings.MEDIA_ROOT + 'profile_pictures',
+                           'document_root': settings.MEDIA_ROOT + 'profile_pictures',
                            }
                            )
                        )
