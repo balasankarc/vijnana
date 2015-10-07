@@ -69,7 +69,19 @@ class Resource(models.Model):
     uploader = models.ForeignKey(User)
 
 
+class Exam(models.Model):
+    name = models.CharField(max_length=100)
+    totalmarks = models.CharField(max_length=10)
+    time = models.CharField(max_length=10)
+    subject = models.ForeignKey(Subject)
+
+
 class Question(models.Model):
-    text = models.CharField(max_length=5000)
+    text = models.CharField(max_length=5000, unique=True)
     module = models.IntegerField()
-    category = models.CharField(max_length=50)
+    mark = models.CharField(max_length=10)
+    exam = models.ManyToManyField(Exam)
+    subject = models.ForeignKey(Subject)
+
+    def __unicode__(self):
+        return self.text
