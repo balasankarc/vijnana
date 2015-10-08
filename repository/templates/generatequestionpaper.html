@@ -1,0 +1,62 @@
+{% extends "master.html" %}
+{% block content %}
+{% if error %}
+<div class="alert alert-danger">
+    {{error}}
+</div>
+{% endif %}
+<script>
+
+function updateElementIndex(el, prefix, ndx) {
+    var id_regex = new RegExp('(' + prefix + '-\\d+-)');
+    var replacement = prefix + '-' + ndx + '-';
+    if ($(el).attr("for")) $(el).attr("for", $(el).attr("for").replace(id_regex,
+                replacement));
+    if (el.id) el.id = el.id.replace(id_regex, replacement);
+    if (el.name) el.name = el.name.replace(id_regex, replacement);
+}
+function addNew()
+{
+    var j = ($('#qpform div.row').size());
+    var i =j.toString();
+    var scntDiv = $('#questionforms');
+    $('<div class="row"><div class="col-md-3"><select name="form-'+i+'-module" class="form-control"><option selected="selected">Select Module</option><option value="1">Module 1</option><option value="2">Module 2</option><option value="3">Module 3</option><option value="4">Module 4</option></select></div><div class="col-md-3"><input type ="text" name="form-'+i+'-mark" class="form-control" required placeholder="Mark"></div><div class="col-md-3"><input type="text" class="form-control" name="form-'+i+'-count" required placeholder="Number of questions"></div><div class="col-md-3" style="padding-top:1%"><a id="remove" class="remove" href="#" onclick="removeForm(this)">Remove</a></div></div>').appendTo(scntDiv);
+    $('#id_form-TOTAL_FORMS').val(j+1);
+    $('#id_form-INITIAL_FORMS').val(j+1);
+
+
+}
+$(document).on('click', '.remove', function() {
+    var i = $('#id_form-TOTAL_FORMS').val();
+    $(this).parent().parent().remove();
+    var forms = $('#qpform div.row');
+    var j = 0;
+    for(j = 0; j<forms.length; j++)
+    {
+        forms.get(j).children[0].children.item(0).name = 'form-'+j+'-module';
+        forms.get(j).children[1].children.item(0).name = 'form-'+j+'-mark';
+        forms.get(j).children[2].children.item(0).name = 'form-'+j+'-count';
+    }
+    $('#id_form-TOTAL_FORMS').val(i-1);
+    $('#id_form-INITIAL_FORMS').val(i-1);
+});
+</script>
+<div class="row">
+    <div style="margin:0 auto">
+        <form action="/subject/{{subject.id}}/generate_questionpaper/" method="post" class="form-signin" style="width:100%;max-width:100%" enctype=multipart/form-data id='qpform'>
+            {% csrf_token %}
+            <h2 class="form-signin-heading">Exam Details</h2>
+            <input type="text" id="examname" name="examname" class="form-control" placeholder="Exam Name" required>
+            <input type="text" id="totalmarks" name="totalmarks" class="form-control" placeholder="Total Marks" required>
+            <input type="text" id="time" name="time" class="form-control" placeholder="Time (in hours)" required>
+            <button type="button" onclick='addNew()' class='btn btn-success'>Add Question Type</button>
+            <br />
+            <br />
+            <div id="questionforms">
+                {{qpformset.management_form}}
+            </div>
+            <button type="submit" class="btn btn-primary form-control">Generate</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

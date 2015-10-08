@@ -1,19 +1,29 @@
 import os
+import random
 
 import bcrypt
+from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.images import get_image_dimensions
 from django.db import IntegrityError
+from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from openpyxl import load_workbook
 from PIL import Image
+from pylatex import Document, Package
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
 
 from .forms import (AssignOrRemoveStaffForm, EditProfileForm, NewResourceForm,
                     NewSubjectForm, ProfilePictureCropForm,
-                    ProfilePictureUploadForm, SearchForm, SignInForm,
-                    SignUpForm)
-from .models import Department, Profile, Resource, Subject, User, Question
+                    ProfilePictureUploadForm, QuestionBankUploadForm,
+                    QuestionPaperCategoryForm, QuestionPaperGenerateForm,
+                    SearchForm, SignInForm, SignUpForm)
+from .models import (Department, Exam, Profile, Question, Resource, Subject,
+                     User)
 
 RESOURCE_TYPES = {
     'Presentation': 'presentation',
@@ -508,18 +518,195 @@ def edit_user(request, username):
                        })
 
 
-def read_excel_file(excelfilepath):
+def read_excel_file(excelfilepath, subject):
     workbook = load_workbook(filename=excelfilepath)
     for row in workbook.worksheets[0].rows:
-        questiontext = row[1]
-        questionmodule = row[2]
-        questioncategory = row[3]
-        question = Question(text=questiontext,
-                            module=questionmodule,
-                            category=questioncategory
-                            )
-        question.save()
+        try:
+            questiontext = row[1].value
+            print "Text", questiontext
+            questionmodule = row[2].value
+            questionmark = row[3].value
+            question = Question(text=questiontext,
+                                module=questionmodule,
+                                mark=questionmark
+                                )
+            question.subject = subject
+            question.save()
+        except Exception, e:
+            print "Error"
+            print e
+            pass
 
 
-def upload_question_bank(request):
-    pass
+def upload_question_bank(request, subject_id):
+    subject = Subject.objects.get(id=subject_id)
+    if request.POST:
+        form = QuestionBankUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                qbfile = request.FILES['qbfile']
+                with open('/tmp/qb.xlsx', 'wb') as destination:
+                    for chunk in qbfile.chunks():
+                        destination.write(chunk)
+                read_excel_file('/tmp/qb.xlsx', subject)
+                return HttpResponseRedirect('/subject/'+subject_id)
+            except:
+                return render(request, 'upload_questionbank.html',
+                              {'subject': subject,
+                               'error': 'Some problem with the file'})
+    else:
+        return render(request, 'upload_questionbank.html',
+                      {'subject': subject})
+
+
+def select_random(itemlist, count):
+    result = []
+    N = 0
+    for item in itemlist:
+        N += 1
+        if len(result) < count:
+            result.append(item)
+        else:
+            s = int(random.random() * N)
+            if s < count:
+                result[s] = item
+    return result
+
+
+def make_pdf2(subject, questions, exam, marks, time):
+    print "Questions"
+    print questions
+    content = '''
+    \\centering{\\Large{Adi Shankara Institute of Engineering and Technology, Kalady}} \\\\[.5cm]
+    \\centering{\\large{%s}} \\\\[.5cm]
+    \\centering{\\large{%s}} \\\\
+    \\normalsize{Marks: %s \\hfill Time: %s Hrs}\\\\[.5cm]''' % (exam.name, subject.name, marks, time)
+    for part in ['Part A', 'Part B', 'Part C']:
+        if questions[part]:
+            content = content + '\\centering{%s}\n' % part
+            content = content + '\\begin{enumerate}\n'
+            for mark in questions[part]:
+                for question in questions[part][mark]:
+                    text = question.text
+                    if len(question.text) > 75:
+                        print "Here", text
+                        pos = text.index(' ', 70)
+                        text = question.text[:pos] + '\\\\' + question.text[pos+1:]
+                    content = content + '\\item{%s\\hfill%s}\n' % (text, question.mark)
+            content = content + '\\end{enumerate}\n'
+    print content
+    doc = Document(default_filepath='/tmp/basic')
+    doc.packages.append(Package('geometry', options=['tmargin=2.5cm',
+                                                     'lmargin=2.5cm',
+                                                     'rmargin=3.0cm',
+                                                     'bmargin=2.0cm']))
+    doc.append(content)
+    doc.generate_pdf()
+
+
+def make_pdf(questions, exam):
+    doc = SimpleDocTemplate("/tmp/questionpaper.pdf", pagesize=A4,
+                            rightMargin=72, leftMargin=72,
+                            topMargin=50, bottomMargin=30)
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name='Center1', alignment=1, fontSize=18))
+    styles.add(ParagraphStyle(name='Center2', alignment=1, fontSize=14))
+    styles.add(ParagraphStyle(name='Center3', alignment=1, fontSize=12))
+    styles.add(ParagraphStyle(name='Left', alignment=0, fontSize=12))
+    styles.add(ParagraphStyle(name='Right', alignment=2, fontSize=12))
+    styles.add(ParagraphStyle(name='Normal2', bulletIndent=20))
+    styles.add(ParagraphStyle(name='Normal3', fontSize=12))
+    Story = []
+    doc.title = "Question Paper - " + exam.name
+    title = 'Adi Shankara Institute of Engineering and Technology'
+    time = "Time : " + exam.time
+    totalmarks = "Marks : " + exam.totalmarks
+    Story.append(Paragraph(title, styles["Center1"]))
+    Story.append(Spacer(1, 0.25 * inch))
+    Story.append(Paragraph(exam.name, styles["Center2"]))
+    Story.append(Spacer(1, 12))
+    Story.append(Paragraph(totalmarks, styles["Left"]))
+    Story.append(Paragraph(time, styles["Right"]))
+    count = 1
+    for part in ['Part A', 'Part B', 'Part C']:
+        Story.append(Paragraph(part, styles["Center3"]))
+        for mark in questions[part]:
+            for question in questions[part][mark]:
+                questiontext = str(count) + ". " + question.text
+                Story.append(Paragraph(questiontext, styles["Normal3"]))
+                Story.append(Spacer(1, 12))
+                count = count + 1
+    Story.append(PageBreak())
+    doc.build(Story)
+    return "/tmp/questionpaper.pdf"
+
+
+def create_qp(subject, exam, totalmarks, time, question_criteria):
+    questions = {'Part A': {}, 'Part B': {}, 'Part C': {}}
+    status = 0
+    for trio in question_criteria:
+        module = trio[0]
+        try:
+            mark = int(trio[1])
+        except:
+            mark = float(trio[1])
+        count = int(trio[2])
+        questiontotallist = Question.objects.filter(module=module, mark=mark)
+        selectedquestions = select_random(questiontotallist, count)
+        if mark >= 7:
+            part = 'Part C'
+        elif mark >= 5:
+            part = 'Part B'
+        else:
+            part = 'Part A'
+        if mark not in questions[part]:
+            questions[part][mark] = []
+        questions[part][mark] = questions[part][mark] + selectedquestions
+    if questions:
+        for part in questions:
+            for mark in questions[part]:
+                for question in questions[part][mark]:
+                    exam.question_set.add(question)
+                    exam.save()
+        status = 1
+    path = make_pdf2(subject, questions, exam, totalmarks, time)
+    return status, path
+
+
+def generate_question_paper(request, subject_id):
+    subject = Subject.objects.get(id=subject_id)
+    QuestionFormSet = formset_factory(QuestionPaperCategoryForm)
+    if request.POST:
+        print request.POST
+        QPForm = QuestionPaperGenerateForm(request.POST)
+        examname = ''
+        totalmarks = ''
+        time = ''
+        if QPForm.is_valid():
+            examname = QPForm.cleaned_data['examname']
+            totalmarks = QPForm.cleaned_data['totalmarks']
+            time = QPForm.cleaned_data['time']
+            exam = Exam(name=examname, totalmarks=totalmarks, time=time,
+                        subject_id=subject.id)
+            exam.save()
+        question_categories_set = QuestionFormSet(request.POST)
+        if question_categories_set.is_valid():
+            print "\n\n\n\n\n\n Form Data \n\n\n\n\n\n\n\n"
+            question_criteria = []
+            for form in question_categories_set.forms:
+                if form.is_valid():
+                    module = form.cleaned_data['module']
+                    mark = form.cleaned_data['mark']
+                    count = form.cleaned_data['count']
+                    question_criteria.append((module, mark, count))
+            status, path = create_qp(subject, exam, totalmarks,
+                                     time, question_criteria)
+        else:
+            print "Invalid"
+            print question_categories_set
+    else:
+        question_categories_set = QuestionFormSet()
+
+    return render(request, 'generatequestionpaper.html',
+                  {'subject': subject,
+                   'qpformset': question_categories_set})

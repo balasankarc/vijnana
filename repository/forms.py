@@ -58,3 +58,19 @@ class EditProfileForm(forms.Form):
     address = forms.CharField(widget=forms.Textarea, required=False)
     email = forms.EmailField(required=False)
     bloodgroup = forms.CharField(required=False)
+
+
+class QuestionBankUploadForm(forms.Form):
+    qbfile = forms.FileField()
+
+
+class QuestionPaperGenerateForm(forms.Form):
+    examname = forms.CharField()
+    totalmarks = forms.CharField()
+    time = forms.CharField()
+
+
+class QuestionPaperCategoryForm(forms.Form):
+    module = forms.CharField()
+    mark = forms.CharField()
+    count = forms.CharField()
