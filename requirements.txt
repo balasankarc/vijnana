@@ -3,3 +3,4 @@ bcrypt
 django-nose
 pillow
 openpyxl
+pylatex
