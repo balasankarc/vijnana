@@ -46,6 +46,9 @@ class Department(models.Model):
     name = models.CharField(max_length=50)
     abbreviation = models.CharField(max_length=10)
 
+    def __unicode__(self):
+        return self.name
+
 
 class User(models.Model):
     username = models.CharField(max_length=25, unique=True)
@@ -53,6 +56,9 @@ class User(models.Model):
     name = models.CharField(max_length=50)
     status = models.CharField(max_length=20, default='student')
     department = models.ForeignKey(Department)
+
+    def __unicode__(self):
+        return self.username
 
 
 class Profile(models.Model):
@@ -62,6 +68,9 @@ class Profile(models.Model):
     bloodgroup = models.CharField(max_length=5)
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=15)
+
+    def __unicode__(self):
+        return "Profile of " + self.user.username
 
 
 class Subject(models.Model):
@@ -75,6 +84,9 @@ class Subject(models.Model):
     students = models.ManyToManyField(User, related_name="subscribedsubjects")
     description = models.TextField(max_length=5000)
 
+    def __unicode__(self):
+        return self.name
+
 
 class Resource(models.Model):
     title = models.CharField(max_length=100)
@@ -83,6 +95,9 @@ class Resource(models.Model):
     resourcefile = models.FileField(upload_to=set_filename)
     uploader = models.ForeignKey(User)
 
+    def __unicode__(self):
+        return self.title
+
 
 class Exam(models.Model):
     name = models.CharField(max_length=100)
@@ -90,6 +105,9 @@ class Exam(models.Model):
     time = models.CharField(max_length=10)
     subject = models.ForeignKey(Subject)
     questionpaper = models.FileField(upload_to=set_questionpapername)
+
+    def __unicode__(self):
+        return self.name
 
 
 class Question(models.Model):
