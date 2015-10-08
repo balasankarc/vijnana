@@ -1,6 +1,13 @@
 {% extends "master.html" %}
 {% load staticfiles%}
 {% block content %}
+{% if messages %}
+{% for message in messages %}
+{% if message.tags == "success" %}
+<div class="alert alert-success"> {{message}} </div>
+{% endif %}
+{% endfor %}
+{% endif %}
 <div class='panel panel-default'>
     <div class='panel-heading'>
         <div class="row">

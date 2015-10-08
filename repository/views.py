@@ -3,6 +3,7 @@ import random
 from datetime import datetime
 
 import bcrypt
+from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.core.files.images import get_image_dimensions
@@ -82,6 +83,7 @@ def user_signin(request):
     else:
         if 'user' in request.session.keys():
             # If user already logged in, redirect to homepage
+            messages.success(request, "You are already signed in.")
             return HttpResponseRedirect('/')
     return render(request, 'signin.html',
                   {'error': error, 'username': username})
@@ -546,6 +548,7 @@ def upload_question_bank(request, subject_id):
                     for chunk in qbfile.chunks():
                         destination.write(chunk)
                 read_excel_file('/tmp/qb.xlsx', subject)
+                messages.success(request, "Question Bank Uploaded succesfully")
                 return HttpResponseRedirect('/subject/'+subject_id)
             except:
                 return render(request, 'upload_questionbank.html',

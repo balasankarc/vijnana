@@ -1,5 +1,13 @@
 {% extends "master.html" %}
 {% block content %}
+{% if messages %}
+{% for message in messages %}
+{% if message.tags == "success" %}
+<div class="alert alert-success"> {{message}} </div>
+{% endif %}
+{% endfor %}
+{% endif %}
+
 {% if error %}
 <div class="alert alert-danger">
     {{error}}
