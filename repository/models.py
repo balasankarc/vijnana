@@ -4,6 +4,21 @@ import os
 from django.db import models
 
 
+def set_questionpapername(instance, filename):
+    hashout = hashlib.md5()
+    filenamesplit = os.path.splitext(filename)
+    input_filename = filenamesplit[0].replace(
+        ' ', '_').replace(',', '_').replace('.', '_')
+    extension = filenamesplit[1]
+    hashout.update(input_filename)
+    if len(input_filename) < 10:
+        outfilename = input_filename + hashout.hexdigest() + extension
+    else:
+        outfilename = input_filename[:10] + '_' + \
+            hashout.hexdigest() + input_filename[-10:] + extension
+    return os.path.join('questionpapers', outfilename)
+
+
 def set_filename(instance, filename):
     '''Set a unique file name to the uploaded resource before saving it'''
     hashout = hashlib.md5()
@@ -74,6 +89,7 @@ class Exam(models.Model):
     totalmarks = models.CharField(max_length=10)
     time = models.CharField(max_length=10)
     subject = models.ForeignKey(Subject)
+    questionpaper = models.FileField(upload_to=set_questionpapername)
 
 
 class Question(models.Model):

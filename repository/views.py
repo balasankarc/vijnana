@@ -1,9 +1,10 @@
 import os
 import random
+from datetime import datetime
 
 import bcrypt
-from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files import File
 from django.core.files.images import get_image_dimensions
 from django.db import IntegrityError
 from django.forms.formsets import formset_factory
@@ -12,10 +13,6 @@ from django.shortcuts import render
 from openpyxl import load_workbook
 from PIL import Image
 from pylatex import Document, Package
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
 
 from .forms import (AssignOrRemoveStaffForm, EditProfileForm, NewResourceForm,
                     NewSubjectForm, ProfilePictureCropForm,
@@ -573,9 +570,11 @@ def select_random(itemlist, count):
     return result
 
 
-def make_pdf2(subject, questions, exam, marks, time):
+def make_pdf(subject, questions, exam, marks, time):
     print "Questions"
     print questions
+    today = datetime.today()
+    filename = subject.name.replace(' ', '_') + '_' + str(today.day) + str(today.month) + str(today.year)
     content = '''
     \\centering{\\Large{Adi Shankara Institute of Engineering and Technology, Kalady}} \\\\[.5cm]
     \\centering{\\large{%s}} \\\\[.5cm]
@@ -595,50 +594,17 @@ def make_pdf2(subject, questions, exam, marks, time):
                     content = content + '\\item{%s\\hfill%s}\n' % (text, question.mark)
             content = content + '\\end{enumerate}\n'
     print content
-    doc = Document(default_filepath='/tmp/basic')
+    doc = Document(default_filepath='/tmp/'+filename)
     doc.packages.append(Package('geometry', options=['tmargin=2.5cm',
                                                      'lmargin=2.5cm',
                                                      'rmargin=3.0cm',
                                                      'bmargin=2.0cm']))
     doc.append(content)
     doc.generate_pdf()
-
-
-def make_pdf(questions, exam):
-    doc = SimpleDocTemplate("/tmp/questionpaper.pdf", pagesize=A4,
-                            rightMargin=72, leftMargin=72,
-                            topMargin=50, bottomMargin=30)
-    styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name='Center1', alignment=1, fontSize=18))
-    styles.add(ParagraphStyle(name='Center2', alignment=1, fontSize=14))
-    styles.add(ParagraphStyle(name='Center3', alignment=1, fontSize=12))
-    styles.add(ParagraphStyle(name='Left', alignment=0, fontSize=12))
-    styles.add(ParagraphStyle(name='Right', alignment=2, fontSize=12))
-    styles.add(ParagraphStyle(name='Normal2', bulletIndent=20))
-    styles.add(ParagraphStyle(name='Normal3', fontSize=12))
-    Story = []
-    doc.title = "Question Paper - " + exam.name
-    title = 'Adi Shankara Institute of Engineering and Technology'
-    time = "Time : " + exam.time
-    totalmarks = "Marks : " + exam.totalmarks
-    Story.append(Paragraph(title, styles["Center1"]))
-    Story.append(Spacer(1, 0.25 * inch))
-    Story.append(Paragraph(exam.name, styles["Center2"]))
-    Story.append(Spacer(1, 12))
-    Story.append(Paragraph(totalmarks, styles["Left"]))
-    Story.append(Paragraph(time, styles["Right"]))
-    count = 1
-    for part in ['Part A', 'Part B', 'Part C']:
-        Story.append(Paragraph(part, styles["Center3"]))
-        for mark in questions[part]:
-            for question in questions[part][mark]:
-                questiontext = str(count) + ". " + question.text
-                Story.append(Paragraph(questiontext, styles["Normal3"]))
-                Story.append(Spacer(1, 12))
-                count = count + 1
-    Story.append(PageBreak())
-    doc.build(Story)
-    return "/tmp/questionpaper.pdf"
+    qpinfile = open('/tmp/'+filename+'.pdf')
+    qpfile = File(qpinfile)
+    exam.questionpaper.save(filename+'.pdf', qpfile)
+    return '/uploads/' + exam.questionpaper.url
 
 
 def create_qp(subject, exam, totalmarks, time, question_criteria):
@@ -669,11 +635,12 @@ def create_qp(subject, exam, totalmarks, time, question_criteria):
                     exam.question_set.add(question)
                     exam.save()
         status = 1
-    path = make_pdf2(subject, questions, exam, totalmarks, time)
+    path = make_pdf(subject, questions, exam, totalmarks, time)
     return status, path
 
 
 def generate_question_paper(request, subject_id):
+    error = ''
     subject = Subject.objects.get(id=subject_id)
     QuestionFormSet = formset_factory(QuestionPaperCategoryForm)
     if request.POST:
@@ -701,12 +668,13 @@ def generate_question_paper(request, subject_id):
                     question_criteria.append((module, mark, count))
             status, path = create_qp(subject, exam, totalmarks,
                                      time, question_criteria)
+            return HttpResponseRedirect(path)
         else:
-            print "Invalid"
-            print question_categories_set
+            error = 'Choose some questions.'
     else:
         question_categories_set = QuestionFormSet()
 
     return render(request, 'generatequestionpaper.html',
                   {'subject': subject,
-                   'qpformset': question_categories_set})
+                   'qpformset': question_categories_set,
+                   'error': error})

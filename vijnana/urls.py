@@ -52,5 +52,11 @@ urlpatterns = patterns('',
                            {
                            'document_root': settings.MEDIA_ROOT + 'profile_pictures',
                            }
+                           ),
+                       url(r'^uploads/questionpapers/(?P<path>.*)$',
+                           'django.views.static.serve',
+                           {
+                           'document_root': settings.MEDIA_ROOT + 'questionpapers',
+                           }
                            )
                        )
