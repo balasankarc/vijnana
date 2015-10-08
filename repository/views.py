@@ -36,6 +36,7 @@ USER_STATUS = ['student', 'faculty', 'labstaff', 'administrator', 'hod']
 
 
 def current_user(request):
+    """This method returns the current user from session value."""
     if 'user' in request.session:
         return User.objects.get(username=request.session['user'])
     else:
@@ -43,6 +44,7 @@ def current_user(request):
 
 
 def is_user_hod(request, subject):
+    """This method returns whether the current user is hod of the subject."""
     user = current_user(request)
     if user.status == 'hod' and user.department == subject.department:
         return True
@@ -220,6 +222,7 @@ def search(request):
 
 
 def my_subjects(request, username):
+    """Handles /my_subjects of each user."""
     user = current_user(request)
     if user:
         if user.status == 'teacher' or user.status == 'hod':
@@ -244,6 +247,7 @@ def my_subjects(request, username):
 
 
 def view_subject(request, subject_id):
+    """Displays details and resources of a subject"""
     try:
         subject = Subject.objects.get(id=subject_id)
         resource_list = subject.resource_set.all()
@@ -280,6 +284,7 @@ def view_subject(request, subject_id):
 
 
 def subscribe_me(request, subject_id):
+    """Subscribes user to a subject."""
     try:
         subject = Subject.objects.get(id=subject_id)
         subject.students.add(current_user(request))
@@ -293,6 +298,7 @@ def subscribe_me(request, subject_id):
 
 
 def unsubscribe_me(request, subject_id):
+    """Unsubscribes user from a subject."""
     try:
         subject = Subject.objects.get(id=subject_id)
         if 'user' in request.session:
@@ -309,6 +315,7 @@ def unsubscribe_me(request, subject_id):
 
 
 def assign_staff(request, subject_id):
+    """Assigns staff to a subject. Available to HOD of the subject."""
     subject = Subject.objects.get(id=subject_id)
     is_hod = is_user_hod(request, subject)
     if request.POST and is_hod:
@@ -336,6 +343,7 @@ def assign_staff(request, subject_id):
 
 
 def remove_staff(request, subject_id):
+    """Removes staff from a subject. Available to HOD of the subject."""
     subject = Subject.objects.get(id=subject_id)
     if 'user' in request.session:
         user = current_user(request)
@@ -365,6 +373,7 @@ def remove_staff(request, subject_id):
 
 
 def new_subject(request):
+    """Create a new subject. Available to HODs only"""
     department_list = Department.objects.all()
     error = ''
     if request.POST:
@@ -392,6 +401,7 @@ def new_subject(request):
 
 
 def upload_profilepicture(request, username):
+    """Handles upload of profile picture by user."""
     user = User.objects.get(username=username)
     if not user:
         return render(request, 'error.html',
@@ -441,6 +451,7 @@ def upload_profilepicture(request, username):
 
 
 def crop_profilepicture(request, username):
+    """Let the user crop the profile picture uploaded."""
     user = User.objects.get(username=username)
     if not user:
         return render(request, 'error.html',
@@ -476,11 +487,13 @@ def crop_profilepicture(request, username):
 
 
 def profile(request, username):
+    """Displays profile of a user."""
     user = User.objects.get(username=username)
     return render(request, 'profile.html', {'user': user})
 
 
 def edit_user(request, username):
+    """Let a user edit his/her profile."""
     user = User.objects.get(username=username)
     current_name = user.name or ""
     current_address = user.profile.address or ""
@@ -518,6 +531,8 @@ def edit_user(request, username):
 
 
 def read_excel_file(excelfilepath, subject):
+    """Read excel file which contains question bank and create question objects
+    from it."""
     workbook = load_workbook(filename=excelfilepath)
     for row in workbook.worksheets[0].rows:
         try:
@@ -538,6 +553,7 @@ def read_excel_file(excelfilepath, subject):
 
 
 def upload_question_bank(request, subject_id):
+    """Let staff of a subject upload a question bank for the subject."""
     subject = Subject.objects.get(id=subject_id)
     if request.POST:
         form = QuestionBankUploadForm(request.POST, request.FILES)
@@ -553,13 +569,16 @@ def upload_question_bank(request, subject_id):
             except:
                 return render(request, 'upload_questionbank.html',
                               {'subject': subject,
-                               'error': 'Some problem with the file'})
+                               'error': 'Some problem with the file',
+                               'user': current_user(request)})
     else:
         return render(request, 'upload_questionbank.html',
-                      {'subject': subject})
+                      {'subject': subject,
+                       'user': current_user(request)})
 
 
 def select_random(itemlist, count):
+    """Select n items randomly from a list. (Implements reservoir sampling)"""
     result = []
     N = 0
     for item in itemlist:
@@ -574,15 +593,19 @@ def select_random(itemlist, count):
 
 
 def make_pdf(subject, questions, exam, marks, time):
+    """Make the pdf of question paper using LaTex."""
     print "Questions"
     print questions
     today = datetime.today()
-    filename = subject.name.replace(' ', '_') + '_' + str(today.day) + str(today.month) + str(today.year)
+    filename = subject.name.replace(' ', '_') + '_' + \
+        str(today.day) + str(today.month) + str(today.year)
     content = '''
-    \\centering{\\Large{Adi Shankara Institute of Engineering and Technology, Kalady}} \\\\[.5cm]
+    \\centering{\\Large{Adi Shankara Institute of Engineering and Technology,
+    Kalady}} \\\\[.5cm]
     \\centering{\\large{%s}} \\\\[.5cm]
     \\centering{\\large{%s}} \\\\
-    \\normalsize{Marks: %s \\hfill Time: %s Hrs}\\\\[.5cm]''' % (exam.name, subject.name, marks, time)
+    \\normalsize{Marks: %s \\hfill Time: %s Hrs}\\\\
+    [.5cm]''' % (exam.name, subject.name, marks, time)
     for part in ['Part A', 'Part B', 'Part C']:
         if questions[part]:
             content = content + '\\centering{%s}\n' % part
@@ -593,8 +616,9 @@ def make_pdf(subject, questions, exam, marks, time):
                     if len(question.text) > 75:
                         print "Here", text
                         pos = text.index(' ', 70)
-                        text = question.text[:pos] + '\\\\' + question.text[pos+1:]
-                    content = content + '\\item{%s\\hfill%s}\n' % (text, question.mark)
+                        text = question.text[:pos] + '\\\\' + \
+                            question.text[pos+1:]
+                    content += '\\item{%s\\hfill%s}\n' % (text, question.mark)
             content = content + '\\end{enumerate}\n'
     print content
     doc = Document(default_filepath='/tmp/'+filename)
@@ -610,7 +634,9 @@ def make_pdf(subject, questions, exam, marks, time):
     return '/uploads/' + exam.questionpaper.url
 
 
-def create_qp(subject, exam, totalmarks, time, question_criteria):
+def create_qp_dataset(subject, exam, totalmarks, time, question_criteria):
+    """Populates the dataset needed to generate a question paper. Invokes
+    make_pdf() method"""
     questions = {'Part A': {}, 'Part B': {}, 'Part C': {}}
     status = 0
     for trio in question_criteria:
@@ -643,6 +669,8 @@ def create_qp(subject, exam, totalmarks, time, question_criteria):
 
 
 def generate_question_paper(request, subject_id):
+    """Handles interface through which user enters the question paper
+    attributes. This method invokes create_qp_dataset() method."""
     error = ''
     subject = Subject.objects.get(id=subject_id)
     QuestionFormSet = formset_factory(QuestionPaperCategoryForm)
@@ -669,8 +697,8 @@ def generate_question_paper(request, subject_id):
                     mark = form.cleaned_data['mark']
                     count = form.cleaned_data['count']
                     question_criteria.append((module, mark, count))
-            status, path = create_qp(subject, exam, totalmarks,
-                                     time, question_criteria)
+            status, path = create_qp_dataset(subject, exam, totalmarks,
+                                             time, question_criteria)
             return HttpResponseRedirect(path)
         else:
             error = 'Choose some questions.'
@@ -680,4 +708,5 @@ def generate_question_paper(request, subject_id):
     return render(request, 'generatequestionpaper.html',
                   {'subject': subject,
                    'qpformset': question_categories_set,
-                   'error': error})
+                   'error': error,
+                   'user': current_user(request)})
