@@ -5,6 +5,11 @@
     {{error}}
 </div>
 {% endif %}
+{% if user not in subject.staff.all %}
+<div class="alert alert-danger">
+    You are not permitted to access this page
+</div>
+{% else %}
 <div class="row">
     <div style="margin:0 auto">
         <form action="/subject/{{subject.id}}/upload_questionbank/" method="post" class="form-signin" enctype=multipart/form-data>
@@ -15,4 +20,5 @@
         </form>
     </div>
 </div>
+{% endif %}
 {% endblock %}

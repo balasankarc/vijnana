@@ -41,6 +41,11 @@ $(document).on('click', '.remove', function() {
     $('#id_form-INITIAL_FORMS').val(i-1);
 });
 </script>
+{% if user not in subject.staff.all %}
+<div class="alert alert-danger">
+    You are not permitted to access this page
+</div>
+{% else %}
 <div class="row">
     <div style="margin:0 auto">
         <form action="/subject/{{subject.id}}/generate_questionpaper/" method="post" class="form-signin" style="width:100%;max-width:100%" enctype=multipart/form-data id='qpform'>
@@ -59,4 +64,5 @@ $(document).on('click', '.remove', function() {
         </form>
     </div>
 </div>
+{% endif %}
 {% endblock %}
