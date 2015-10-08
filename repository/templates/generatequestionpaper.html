@@ -45,7 +45,7 @@ $(document).on('click', '.remove', function() {
     <div style="margin:0 auto">
         <form action="/subject/{{subject.id}}/generate_questionpaper/" method="post" class="form-signin" style="width:100%;max-width:100%" enctype=multipart/form-data id='qpform'>
             {% csrf_token %}
-            <h2 class="form-signin-heading">Exam Details</h2>
+            <h2 class="form-signin-heading">Generate Question Paper</h2>
             <input type="text" id="examname" name="examname" class="form-control" placeholder="Exam Name" required>
             <input type="text" id="totalmarks" name="totalmarks" class="form-control" placeholder="Total Marks" required>
             <input type="text" id="time" name="time" class="form-control" placeholder="Time (in hours)" required>

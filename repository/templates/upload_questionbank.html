@@ -9,7 +9,7 @@
     <div style="margin:0 auto">
         <form action="/subject/{{subject.id}}/upload_questionbank/" method="post" class="form-signin" enctype=multipart/form-data>
             {% csrf_token %}
-            <h2 class="form-signin-heading">Upload profile picture</h2>
+            <h2 class="form-signin-heading">Upload Question Bank</h2>
             <input type="file" id="qbfile" name="qbfile" class="form-control" required>
             <button type="submit" class="btn btn-primary form-control">Upload</button>
         </form>
