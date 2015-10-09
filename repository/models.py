@@ -64,7 +64,7 @@ class User(models.Model):
 class Profile(models.Model):
     user = models.OneToOneField(User)
     address = models.TextField()
-    picture = models.ImageField(upload_to=set_profilepicturename)
+    picture = models.ImageField(upload_to=set_profilepicturename, blank=True)
     bloodgroup = models.CharField(max_length=5)
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=15)

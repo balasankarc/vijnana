@@ -14,7 +14,9 @@
     <div class="col-md-5">
         <div class="row">
             <div class style="margin-left:15%">
+                {% if user.profile.picture %}
                 <img src="/uploads/{{user.profile.picture.url}}" alt="{{user.username}}" width="100px" style="margin-top:10%"/> <br /> <br />
+                {% endif %}
                 <div class="btn-group">
                     <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Profile Picture<span class="caret"></span>

@@ -56,9 +56,22 @@ def home(request):
     """Displays home page"""
     user = current_user(request)
     if user:
-        return render(request, 'profile.html', {'user': user})
+        subject_list = []
+        if user.status == 'teacher' or user.status == 'hod':
+            subject_list = user.teachingsubjects.all()
+        else:
+            subject_list = user.subscribedsubjects.all()
+        return render(request, 'profile.html',
+                      {
+                          'user': user,
+                          'subject_list': subject_list})
     else:
         return render(request, 'home.html')
+
+
+def about(request):
+    """Displays home page"""
+    return render(request, 'about.html')
 
 
 def user_signin(request):
@@ -117,6 +130,8 @@ def user_signup(request):
                             name=input_name,
                             department_id=input_department)
                 user.save()
+                profile = Profile(user=user)
+                profile.save()
                 request.session['user'] = input_username
                 request.session['usertype'] = user.status
                 return HttpResponseRedirect('/')
@@ -488,8 +503,24 @@ def crop_profilepicture(request, username):
 
 def profile(request, username):
     """Displays profile of a user."""
-    user = User.objects.get(username=username)
-    return render(request, 'profile.html', {'user': user})
+    try:
+        user = User.objects.get(username=username)
+        subject_list = []
+        if user:
+            if user.status == 'teacher' or user.status == 'hod':
+                subject_list = user.teachingsubjects.all()
+            else:
+                subject_list = user.subscribedsubjects.all()
+        return render(request, 'profile.html',
+                      {
+                          'user': user,
+                          'subject_list': subject_list})
+    except Exception, e:
+        print e
+        return render(request, 'error.html',
+                      {
+                          'error': 'The requested user not found.'
+                      }, status=404)
 
 
 def edit_user(request, username):
@@ -648,12 +679,18 @@ def create_qp_dataset(subject, exam, totalmarks, time, question_criteria):
         count = int(trio[2])
         questiontotallist = Question.objects.filter(module=module, mark=mark)
         selectedquestions = select_random(questiontotallist, count)
-        if mark >= 7:
-            part = 'Part C'
-        elif mark >= 5:
-            part = 'Part B'
-        else:
-            part = 'Part A'
+        if subject.course == 'B.Tech':
+            if mark >= 10:
+                part = 'Part C'
+            elif mark >= 4:
+                part = 'Part B'
+            else:
+                part = 'Part A'
+        elif subject.course == 'M.Tech':
+            if mark >= 10:
+                part = 'Part B'
+            else:
+                part = 'Part A'
         if mark not in questions[part]:
             questions[part][mark] = []
         questions[part][mark] = questions[part][mark] + selectedquestions
