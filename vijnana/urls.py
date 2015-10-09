@@ -5,6 +5,7 @@ from django.conf import settings
 urlpatterns = patterns('',
                        url(r'^admin/', include(admin.site.urls)),
                        url(r'^$', 'repository.views.home'),
+                       url(r'^about/$', 'repository.views.about'),
                        url(r'^sign_in/$', 'repository.views.user_signin'),
                        url(r'^sign_up/$', 'repository.views.user_signup'),
                        url(r'^new_subject/$',
