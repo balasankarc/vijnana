@@ -1,22 +1,30 @@
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from django.conf import settings
+from repository.views import UserActivities, ResourceActivities, StaticPages
 
 urlpatterns = patterns('',
                        url(r'^admin/', include(admin.site.urls)),
-                       url(r'^$', 'repository.views.home'),
-                       url(r'^about/$', 'repository.views.about'),
-                       url(r'^sign_in/$', 'repository.views.user_signin'),
-                       url(r'^sign_up/$', 'repository.views.user_signup'),
+                       url(r'^$', StaticPages.Home.as_view()),
+                       url(r'^about/$', StaticPages.About.as_view()),
+                       url(r'^sign_up/$',
+                           UserActivities.UserSignUp.as_view()),
+                       url(r'^sign_in/$',
+                           UserActivities.UserSignIn.as_view()),
+                       url(r'^sign_out/$',
+                           UserActivities.UserSignOut.as_view()),
+                       url(r'^user/(?P<username>[a-zA-Z _0-9]+)/subjects(/)?$',
+                           UserActivities.UserSubjects.as_view()),
                        url(r'^new_subject/$',
                            'repository.views.new_subject'),
                        url(r'^new_resource/$',
-                           'repository.views.new_resource'),
+                           ResourceActivities.NewResource.as_view()),
                        url(r'^resource/(?P<resource_id>[0-9]+)/$',
-                           'repository.views.get_resource'),
-                       url(r'^sign_out/$', 'repository.views.user_signout'),
+                           ResourceActivities.GetResource.as_view()),
                        url(r'type/(?P<type_name>[a-zA-Z _]+)/$',
-                           'repository.views.type_resource_list'),
+                           ResourceActivities.GetResourcesOfType.as_view()),
+                       url(r'^search/$',
+                           ResourceActivities.SearchResource.as_view()),
                        url(r'subject/(?P<subject_id>[0-9]+)/$',
                            'repository.views.view_subject'),
                        url(r'subject/(?P<subject_id>[0-9]+)/subscribe_me$',
@@ -31,9 +39,6 @@ urlpatterns = patterns('',
                            'repository.views.remove_staff'),
                        url(r'subject/(?P<subject_id>[0-9]+)/assign_staff$',
                            'repository.views.assign_staff'),
-                       url(r'^search/$', 'repository.views.search'),
-                       url(r'^user/(?P<username>[a-zA-Z _0-9]+)/subjects(/)?$',
-                           'repository.views.my_subjects'),
                        url(r'^user/(?P<username>[a-zA-Z _0-9]+)/edit(/)?$',
                            'repository.views.edit_user'),
                        url(r'^user/(?P<username>[a-zA-Z _0-9]+)(/)?$',
@@ -45,19 +50,21 @@ urlpatterns = patterns('',
                        url(r'^uploads/resources/(?P<path>.*)$',
                            'django.views.static.serve',
                            {
-                           'document_root': settings.MEDIA_ROOT + 'resources',
+                               'document_root': settings.MEDIA_ROOT + 'resources',
                            }
                            ),
                        url(r'^uploads/profile_pictures/(?P<path>.*)$',
                            'django.views.static.serve',
                            {
-                           'document_root': settings.MEDIA_ROOT + 'profile_pictures',
+                               'document_root': settings.MEDIA_ROOT +
+                               'profile_pictures',
                            }
                            ),
                        url(r'^uploads/questionpapers/(?P<path>.*)$',
                            'django.views.static.serve',
                            {
-                           'document_root': settings.MEDIA_ROOT + 'questionpapers',
+                               'document_root': settings.MEDIA_ROOT +
+                               'questionpapers',
                            }
                            )
                        )

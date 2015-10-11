@@ -11,6 +11,7 @@ from django.db import IntegrityError
 from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.views.generic import View
 from openpyxl import load_workbook
 from PIL import Image
 from pylatex import Document, Package
@@ -22,17 +23,6 @@ from .forms import (AssignOrRemoveStaffForm, EditProfileForm, NewResourceForm,
                     SearchForm, SignInForm, SignUpForm)
 from .models import (Department, Exam, Profile, Question, Resource, Subject,
                      User)
-
-RESOURCE_TYPES = {
-    'Presentation': 'presentation',
-    'Paper Publication': 'paper_publication',
-    'Subject Note': 'subject_note',
-    'Project Thesis': 'project_thesis',
-    'Seminar Report': 'seminar_report',
-    'Previous Question Paper': 'previous_question_paper'
-}
-
-USER_STATUS = ['student', 'faculty', 'labstaff', 'administrator', 'hod']
 
 
 def current_user(request):
@@ -52,213 +42,299 @@ def is_user_hod(request, subject):
         return False
 
 
-def home(request):
-    """Displays home page"""
-    user = current_user(request)
-    if user:
-        subject_list = []
-        if user.status == 'teacher' or user.status == 'hod':
-            subject_list = user.teachingsubjects.all()
-        else:
-            subject_list = user.subscribedsubjects.all()
-        return render(request, 'profile.html',
-                      {
-                          'user': user,
-                          'subject_list': subject_list})
-    else:
-        return render(request, 'home.html')
+class StaticPages:
 
+    class Home(View):
+        """Displays home page"""
 
-def about(request):
-    """Displays home page"""
-    return render(request, 'about.html')
-
-
-def user_signin(request):
-    """Handles user's sign in action"""
-    error = ""
-    username = ""
-    if request.POST:
-        form = SignInForm(request.POST)
-        if form.is_valid():
-            input_username = form.cleaned_data['username']
-            input_password = form.cleaned_data['password'].encode('utf-8')
-            try:
-                user = User.objects.get(username=input_username)
-                username = user.username
-                password = user.password.encode('utf-8')
-                if bcrypt.hashpw(input_password, password) == password:
-                    request.session['user'] = username
-                    request.session['usertype'] = user.status
-                    return HttpResponseRedirect('/')
+        def get(self, request):
+            user = current_user(request)
+            if user:
+                subject_list = []
+                if user.status == 'teacher' or user.status == 'hod':
+                    subject_list = user.teachingsubjects.all()
                 else:
-                    raise ObjectDoesNotExist
-            except ObjectDoesNotExist:
-                error = "Incorrect username or password"
-    else:
-        if 'user' in request.session.keys():
-            # If user already logged in, redirect to homepage
-            messages.success(request, "You are already signed in.")
-            return HttpResponseRedirect('/')
-    return render(request, 'signin.html',
-                  {'error': error, 'username': username})
+                    subject_list = user.subscribedsubjects.all()
+                return render(request, 'profile.html',
+                              {
+                                  'user': user,
+                                  'subject_list': subject_list})
+            else:
+                return render(request, 'home.html')
+
+    class About(View):
+        """Displays home page"""
+
+        def get(self, request):
+            return render(request, 'about.html')
 
 
-def user_signout(request):
-    """Handles user's sign out action"""
-    if 'user' in request.session.keys():
-        del request.session['user']
-        del request.session['usertype']
-    return HttpResponseRedirect('/')
+class UserActivities:
 
+    class UserSignIn(View):
 
-def user_signup(request):
-    """Handles user's sign up action"""
-    department_list = Department.objects.all()
-    error = ""
-    if request.POST:
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            try:
-                input_username = form.cleaned_data['username']
-                input_password = form.cleaned_data['password'].encode('utf-8')
-                input_name = form.cleaned_data['fullname']
-                input_department = form.cleaned_data['department']
-                password_hash = bcrypt.hashpw(input_password, bcrypt.gensalt())
-                user = User(username=input_username,
-                            password=password_hash,
-                            name=input_name,
-                            department_id=input_department)
-                user.save()
-                profile = Profile(user=user)
-                profile.save()
-                request.session['user'] = input_username
-                request.session['usertype'] = user.status
+        error = ""
+        username = ""
+        password = ""
+        template = "signin.html"
+
+        def get(self, request):
+            if 'user' in request.session.keys():
+                # If user already logged in, redirect to homepage
+                messages.success(request, "You are already signed in.")
                 return HttpResponseRedirect('/')
-            except IntegrityError:
-                error = error + "Username already in use"
-    else:
-        if 'user' in request.session.keys():
-            # If user already logged in, redirect to homepage
-            return HttpResponseRedirect('/')
-    return render(request, 'signup.html',
-                  {'error': error, 'department_list': department_list})
+            else:
+                return render(request, self.template)
 
-
-def new_resource(request):
-    """Add a new resource"""
-    subject_list = Subject.objects.all()
-    error = ""
-    if request.POST:
-        print request.POST
-        form = NewResourceForm(request.POST, request.FILES)
-        print form
-        if form.is_valid():
+        def post(self, request):
+            form = SignInForm(request.POST)
             try:
-                input_title = form.cleaned_data['title']
-                input_category = form.cleaned_data['category']
-                input_subject = Subject.objects.get(
-                    id=form.cleaned_data['subject'])
-                resource_uploader = User.objects.get(
-                    username=request.session['user'])
-                input_file = request.FILES['resourcefile']
-                resource = Resource(
-                    title=input_title, category=input_category,
-                    subject=input_subject, resourcefile=input_file,
-                    uploader=resource_uploader)
-                resource.save()
-                return HttpResponseRedirect('/resource/' + str(resource.id))
-            except Exception, e:
-                error = e
-                print error
-    return render(request, 'newresource.html',
-                  {
-                    'error': error,
-                    'subject_list': subject_list,
-                    'type_list': RESOURCE_TYPES
-                  })
+                if form.is_valid():
+                    input_username = form.cleaned_data['username']
+                    input_password_raw = form.cleaned_data['password']
+                    input_password = input_password_raw.encode('utf-8')
+                    user = User.objects.get(username=input_username)
+                    self.username = user.username
+                    self.password = user.password.encode('utf-8')
+                    hashed_password = bcrypt.hashpw(input_password,
+                                                    self.password)
+                    if hashed_password == self.password:
+                        request.session['user'] = self.username
+                        request.session['usertype'] = user.status
+                    else:
+                        raise ObjectDoesNotExist
+                else:
+                    raise
+            except ObjectDoesNotExist:
+                self.error = "Incorrect username or password"
+                return render(request, self.template,
+                              {
+                                  'error': self.error,
+                                  'username': self.username
+                              })
+            except:
+                self.error = "Missing Field"
+                return render(request, self.template,
+                              {
+                                  'error': self.error,
+                              })
+            return HttpResponseRedirect('/')
 
+    class UserSignOut(View):
 
-def get_resource(request, resource_id):
-    """Get details about a single resource"""
-    try:
-        resource = Resource.objects.get(id=resource_id)
-        return render(request, 'resource.html', {'resource': resource})
-    except ObjectDoesNotExist:
-        return render(request, 'error.html',
-                      {
-                          'error': 'The requested resource not found.'
-                      }, status=404)
+        def get(self, request):
+            """Handles user's sign out action"""
+            if 'user' in request.session.keys():
+                del request.session['user']
+                del request.session['usertype']
+            return HttpResponseRedirect('/')
 
+    class UserSignUp(View):
 
-def type_resource_list(request, type_name):
-    """Get all resources of a specific type"""
-    try:
-        type_name = type_name.replace('_', ' ')
-        resources = Resource.objects.filter(category=RESOURCE_TYPES[type_name])
-        if resources:
-            return render(request, 'type_resource_list.html',
+        department_list = Department.objects.all()
+        error = ""
+        template = 'signup.html'
+
+        def get(self, request):
+            if 'user' in request.session.keys():
+                # If user already logged in, redirect to homepage
+                messages.success(request, "You are already signed in.")
+                return HttpResponseRedirect('/')
+            else:
+                return render(request, self.template,
+                              {'department_list': self.department_list})
+
+        def post(self, request):
+            form = SignUpForm(request.POST)
+            try:
+                if form.is_valid():
+                    input_username = form.cleaned_data['username']
+                    input_password_raw = form.cleaned_data['password']
+                    input_password = input_password_raw.encode('utf-8')
+                    input_name = form.cleaned_data['fullname']
+                    input_department = form.cleaned_data['department']
+                    password_hash = bcrypt.hashpw(input_password,
+                                                  bcrypt.gensalt())
+                    user = User(username=input_username,
+                                password=password_hash,
+                                name=input_name,
+                                department_id=input_department)
+                    user.save()
+                    profile = Profile(user=user)
+                    profile.save()
+                    request.session['user'] = input_username
+                    request.session['usertype'] = user.status
+                else:
+                    raise
+            except IntegrityError:
+                self.error = "Username already in use"
+                return render(request, self.template,
+                              {
+                                  'error': self.error,
+                              })
+            except:
+                self.error = "Missing field."
+                return render(request, self.template,
+                              {
+                                  'error': self.error,
+                              })
+            return HttpResponseRedirect('/')
+
+    class UserSubjects(View):
+        """Handles /my_subjects of each user."""
+
+        error = ""
+        subject_list = []
+
+        def get(self, request, username):
+            user = current_user(request)
+            if user:
+                if user.status == 'teacher' or user.status == 'hod':
+                    self.subject_list = user.teachingsubjects.all()
+                else:
+                    self.subject_list = user.subscribedsubjects.all()
+                if not self.subject_list:
+                    self.error = 'You are not subscribed to any subjects'
+            else:
+                self.error = 'You are not logged in.'
+            return render(request, 'my_subjects.html',
                           {
-                              'resource_list': resources,
-                              'type': type_name
+                              'subject_list': self.subject_list,
+                              'error': self.error
                           })
-        else:
-            raise ObjectDoesNotExist
-    except ObjectDoesNotExist:
-        return render(request, 'error.html',
-                      {
-                          'error': 'No resources under the requested category'
-                      }, status=404)
 
 
-def search(request):
-    """Search for resources having a specific query in their title"""
-    if request.POST:
-        try:
-            form = SearchForm(request.POST)
+class ResourceActivities:
+
+    class NewResource(View):
+
+        RESOURCE_TYPES = {
+            'Presentation': 'presentation',
+            'Paper Publication': 'paper_publication',
+            'Subject Note': 'subject_note',
+            'Project Thesis': 'project_thesis',
+            'Seminar Report': 'seminar_report',
+            'Previous Question Paper': 'previous_question_paper'
+        }
+        subject_list = Subject.objects.all()
+        error = ""
+        template = "newresource.html"
+
+        def get(self, request):
+            return render(request, self.template,
+                          {
+                              'subject_list': self.subject_list,
+                              'type_list': self.RESOURCE_TYPES
+                          })
+
+        def post(self, request):
+            form = NewResourceForm(request.POST, request.FILES)
             if form.is_valid():
-                query = form.cleaned_data['query']
-                resource_list = Resource.objects.filter(title__contains=query)
-                if resource_list:
-                    return render(request, 'search.html',
+                try:
+                    input_title = form.cleaned_data['title']
+                    input_category = form.cleaned_data['category']
+                    input_subject = Subject.objects.get(
+                        id=form.cleaned_data['subject'])
+                    resource_uploader = User.objects.get(
+                        username=request.session['user'])
+                    input_file = request.FILES['resourcefile']
+                    resource = Resource(
+                        title=input_title, category=input_category,
+                        subject=input_subject, resourcefile=input_file,
+                        uploader=resource_uploader)
+                    resource.save()
+                except Exception, e:
+                    self.error = e
+                    return render(request, self.template,
                                   {
-                                      'resource_list': resource_list,
-                                      'query': query
+                                      'error': self.error,
+                                      'subject_list': self.subject_list,
+                                      'type_list': self.RESOURCE_TYPES
+                                  })
+            return HttpResponseRedirect('/resource/' + str(resource.id))
+
+    class GetResource(View):
+
+        def get(self, request, resource_id):
+            try:
+                resource = Resource.objects.get(id=resource_id)
+                return render(request, 'resource.html', {'resource': resource})
+            except ObjectDoesNotExist:
+                return render(request, 'error.html',
+                              {
+                                  'error': 'The requested resource not found.'
+                              }, status=404)
+
+        def post(self, request):
+            return render(request, 'error.html',
+                          {
+                              'error': 'POST method not allowed.'
+                          }, status=405)
+
+    class GetResourcesOfType(View):
+
+        RESOURCE_TYPES = {
+            'Presentation': 'presentation',
+            'Paper Publication': 'paper_publication',
+            'Subject Note': 'subject_note',
+            'Project Thesis': 'project_thesis',
+            'Seminar Report': 'seminar_report',
+            'Previous Question Paper': 'previous_question_paper'
+        }
+
+        def get(self, request, type_name):
+            try:
+                type_name = type_name.replace('_', ' ')
+                cat = self.RESOURCE_TYPES[type_name]
+                resources = Resource.objects.filter(category=cat)
+                if resources:
+                    return render(request, 'type_resource_list.html',
+                                  {
+                                      'resource_list': resources,
+                                      'type': type_name
                                   })
                 else:
                     raise ObjectDoesNotExist
-        except ObjectDoesNotExist:
+            except ObjectDoesNotExist:
+                return render(request, 'error.html',
+                              {
+                                  'error': 'No resources found.'
+                              }, status=404)
+
+    class SearchResource(View):
+        """Search for resources having a specific query in their title"""
+        template = 'search.html'
+        error = ''
+        status = ''
+
+        def get(self, request):
+            return render(request, self.template)
+
+        def post(self, request):
+            try:
+                form = SearchForm(request.POST)
+                if form.is_valid():
+                    query = form.cleaned_data['query']
+                    resource_list = Resource.objects.filter(
+                        title__contains=query)
+                    if resource_list:
+                        return render(request, 'search.html',
+                                      {
+                                          'resource_list': resource_list,
+                                          'query': query
+                                      })
+                    else:
+                        raise ObjectDoesNotExist
+                else:
+                    self.error = 'Something went wrong.'
+                    self.status = 500
+            except ObjectDoesNotExist:
+                self.error = 'Search returned no results.'
+                self.status = 404
             return render(request, 'error.html',
                           {
-                              'error': 'Searched returned no resources.'
-                          }, status=404)
-    else:
-        return render(request, 'search.html')
-
-
-def my_subjects(request, username):
-    """Handles /my_subjects of each user."""
-    user = current_user(request)
-    if user:
-        if user.status == 'teacher' or user.status == 'hod':
-            subject_list = user.teachingsubjects.all()
-        else:
-            subject_list = user.subscribedsubjects.all()
-        if subject_list:
-            return render(request, 'my_subjects.html',
-                          {
-                              'subject_list': subject_list,
-                          })
-        else:
-            return render(request, 'error.html',
-                          {
-                              'error': 'You are not subscribed to any subjects'
-                          }, status=404)
-    else:
-        return render(request, 'error.html',
-                      {
-                          'error': 'You are not logged in.'
-                      }, status=404)
+                              'error': self.error
+                          }, status=self.status)
 
 
 def view_subject(request, subject_id):
@@ -350,9 +426,9 @@ def assign_staff(request, subject_id):
                                            x.status == 'hod']
         return render(request, 'assign_staff.html',
                       {
-                       'is_hod': is_hod,
-                       'staff_list': staff_list,
-                       'subject': subject
+                          'is_hod': is_hod,
+                          'staff_list': staff_list,
+                          'subject': subject
                       })
     return HttpResponseRedirect('/subject/' + subject_id)
 
@@ -380,9 +456,9 @@ def remove_staff(request, subject_id):
         print staff_list
         return render(request, 'remove_staff.html',
                       {
-                       'is_hod': is_hod,
-                       'staff_list': staff_list,
-                       'subject': subject
+                          'is_hod': is_hod,
+                          'staff_list': staff_list,
+                          'subject': subject
                       })
     return HttpResponseRedirect('/subject/' + subject_id)
 
@@ -421,12 +497,12 @@ def upload_profilepicture(request, username):
     if not user:
         return render(request, 'error.html',
                       {
-                       'error': 'The user you requested does not exist.'
+                          'error': 'The user you requested does not exist.'
                       }, status=404)
     elif user != current_user(request):
         return render(request, 'error.html',
                       {
-                       'error': 'You are not permitted to do this.'
+                          'error': 'You are not permitted to do this.'
                       }, status=404)
     else:
         try:
@@ -471,12 +547,12 @@ def crop_profilepicture(request, username):
     if not user:
         return render(request, 'error.html',
                       {
-                       'error': 'The user you requested does not exist.'
+                          'error': 'The user you requested does not exist.'
                       }, status=404)
     elif user != current_user(request):
         return render(request, 'error.html',
                       {
-                       'error': 'You are not permitted to do this.'
+                          'error': 'You are not permitted to do this.'
                       }, status=404)
     else:
         user = User.objects.get(username=username)
@@ -547,7 +623,7 @@ def edit_user(request, username):
                 p.bloodgroup = bloodgroup
                 p.save()
                 user.save()
-                return HttpResponseRedirect('/user/'+user.username)
+                return HttpResponseRedirect('/user/' + user.username)
         except Exception, e:
             print e
 
@@ -596,7 +672,7 @@ def upload_question_bank(request, subject_id):
                         destination.write(chunk)
                 read_excel_file('/tmp/qb.xlsx', subject)
                 messages.success(request, "Question Bank Uploaded succesfully")
-                return HttpResponseRedirect('/subject/'+subject_id)
+                return HttpResponseRedirect('/subject/' + subject_id)
             except:
                 return render(request, 'upload_questionbank.html',
                               {'subject': subject,
@@ -648,20 +724,20 @@ def make_pdf(subject, questions, exam, marks, time):
                         print "Here", text
                         pos = text.index(' ', 70)
                         text = question.text[:pos] + '\\\\' + \
-                            question.text[pos+1:]
+                            question.text[pos + 1:]
                     content += '\\item{%s\\hfill%s}\n' % (text, question.mark)
             content = content + '\\end{enumerate}\n'
     print content
-    doc = Document(default_filepath='/tmp/'+filename)
+    doc = Document(default_filepath='/tmp/' + filename)
     doc.packages.append(Package('geometry', options=['tmargin=2.5cm',
                                                      'lmargin=2.5cm',
                                                      'rmargin=3.0cm',
                                                      'bmargin=2.0cm']))
     doc.append(content)
     doc.generate_pdf()
-    qpinfile = open('/tmp/'+filename+'.pdf')
+    qpinfile = open('/tmp/' + filename + '.pdf')
     qpfile = File(qpinfile)
-    exam.questionpaper.save(filename+'.pdf', qpfile)
+    exam.questionpaper.save(filename + '.pdf', qpfile)
     return '/uploads/' + exam.questionpaper.url
 
 
