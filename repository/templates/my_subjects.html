@@ -1,6 +1,11 @@
 {% extends "master.html" %}
 {% load staticfiles%}
 {% block content %}
+{% if error %}
+<div class="alert alert-danger">
+    {{ error }}
+</div>
+{% else %}
 <div class='panel panel-default'>
     <div class='panel-heading'>
                 <h3 style="margin-top:0;margin-bottom:0">My Subjects</h3>
@@ -29,4 +34,5 @@
         {% endfor %}
     </table>
 </div>
+{% endif %}
 {% endblock %}
