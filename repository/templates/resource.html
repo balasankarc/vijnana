@@ -16,22 +16,22 @@
                         {{resource.title}}
                     </div>
                     <b>Course:</b>
-                    <a href="{{resource.subject.course}}">{{resource.subject.course}}</a>
+                    {{resource.subject.course}}
                     <br>
                     <b>Department:</b>
-                    <a href="/departments/3">{{resource.subject.department}}</a>
+                    {{resource.subject.department}}
                     <br>
                     <b>Semester:</b>
-                    <a href="/semesters/4">{{resource.subject.semester}}</a>
+                    {{resource.subject.semester}}
                     <br>
                     <b>Subject:</b>
-                    <a href="/subjects/1">{{resource.subject.name}}</a>
+                    <a href="/subject/{{resource.subject.id}}">{{resource.subject.name}}</a>
                     <br>
                     <b>Type:</b>
-                    <a href="/types/3">{{resource.category.title}}</a>
+                    <a href="/type/{{resource.category.title}}">{{resource.category.title}}</a>
                     <br>
                     <b>Uploader:</b>
-                    <a href="/users/1">{{resource.uploader.name}}</a>
+                    <a href="/user/{{resource.uploader.username}}">{{resource.uploader.name}}</a>
                     <br>
                     <br>
 
