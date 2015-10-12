@@ -90,9 +90,10 @@
                 </table>
             </div>
         </div>
+        {% endif %}
     </div>
     <div class="col-md-5">
-        {% if user.resource_set.all %}
+        {% if subject_list %}
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h3 class="panel-title">User Subjects</h3>
@@ -121,5 +122,4 @@
         {% endif %}
     </div>
 </div>
-{% endif %}
 {% endblock %}

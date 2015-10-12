@@ -1,7 +1,9 @@
-from django.conf.urls import patterns, include, url
-from django.contrib import admin
 from django.conf import settings
-from repository.views import UserActivities, ResourceActivities, StaticPages
+from django.conf.urls import include, patterns, url
+from django.contrib import admin
+
+from repository.views import (ResourceActivities, StaticPages,
+                              SubjectActivities, UserActivities)
 
 urlpatterns = patterns('',
                        url(r'^admin/', include(admin.site.urls)),
@@ -27,8 +29,10 @@ urlpatterns = patterns('',
                            ResourceActivities.SearchResource.as_view()),
                        url(r'subject/(?P<subject_id>[0-9]+)/$',
                            'repository.views.view_subject'),
-                       url(r'subject/(?P<subject_id>[0-9]+)/subscribe_me$',
-                           'repository.views.subscribe_me'),
+                       url(r'subject/(?P<subject_id>[0-9]+)/subscribe$',
+                           SubjectActivities.SubscribeUser.as_view()),
+                       url(r'subject/(?P<subject_id>[0-9]+)/unsubscribe$',
+                           SubjectActivities.UnsubscribeUser.as_view()),
                        url(r'subject/(?P<subject_id>[0-9]+)/upload_questionbank(/)?$',
                            'repository.views.upload_question_bank'),
                        url(r'subject/(?P<subject_id>[0-9]+)/generate_questionpaper(/)?$',

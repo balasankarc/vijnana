@@ -374,35 +374,62 @@ def view_subject(request, subject_id):
                       }, status=404)
 
 
-def subscribe_me(request, subject_id):
+class SubjectActivities:
     """Subscribes user to a subject."""
-    try:
-        subject = Subject.objects.get(id=subject_id)
-        subject.students.add(current_user(request))
-        subject.save()
-        return HttpResponseRedirect('/subject/' + subject_id)
-    except ObjectDoesNotExist:
-        return render(request, 'error.html',
-                      {
-                          'error': 'The subject you requested does not exist.'
-                      }, status=404)
 
+    class SubscribeUser(View):
 
-def unsubscribe_me(request, subject_id):
-    """Unsubscribes user from a subject."""
-    try:
-        subject = Subject.objects.get(id=subject_id)
-        if 'user' in request.session:
-            user = current_user(request)
-            if user in subject.students.all():
-                subject.students.remove(user)
-                subject.save()
-        return HttpResponseRedirect('/subject/' + subject_id)
-    except ObjectDoesNotExist:
-        return render(request, 'error.html',
-                      {
-                          'error': 'The subject you requested does not exist.'
-                      }, status=404)
+        error = ""
+        status = 200
+        template = "error.html"
+
+        def get(self, request, subject_id):
+            try:
+                user = current_user(request)
+                if user:
+                    subject = Subject.objects.get(id=subject_id)
+                    subject.students.add(current_user(request))
+                    subject.save()
+                    return HttpResponseRedirect('/subject/' + subject_id)
+                else:
+                    self.error = "You are not logged in."
+                    self.status = 403
+            except ObjectDoesNotExist:
+                self.error = "Requested subject not found."
+                self.status = 404
+            return render(request, self.template,
+                          {
+                              'error': self.error
+                          }, status=self.status)
+
+    class UnsubscribeUser(View):
+        """Unsubscribes user from a subject."""
+
+        error = ""
+        status = 200
+        template = "error.html"
+
+        def get(self, request, subject_id):
+            try:
+                subject = Subject.objects.get(id=subject_id)
+                if 'user' in request.session:
+                    user = current_user(request)
+                    if user in subject.students.all():
+                        subject.students.remove(user)
+                        subject.save()
+                        return HttpResponseRedirect('/subject/' + subject_id)
+                    else:
+                        self.error = 'You are not subscribed to this subject.'
+                        self.status = 403
+                else:
+                    self.error = "You are not logged in."
+                    self.status = 403
+            except ObjectDoesNotExist:
+                self.error = 'The subject you requested does not exist.'
+            return render(request, self.template,
+                          {
+                              'error': self.status
+                          }, status=self.status)
 
 
 def assign_staff(request, subject_id):
