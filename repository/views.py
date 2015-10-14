@@ -1,3 +1,8 @@
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
+
+
 import os
 import random
 from datetime import datetime
@@ -14,7 +19,6 @@ from django.shortcuts import render
 from django.views.generic import View
 from openpyxl import load_workbook
 from PIL import Image
-from pylatex import Document, Package
 
 from .forms import (AssignOrRemoveStaffForm, EditProfileForm, NewResourceForm,
                     NewSubjectForm, ProfilePictureCropForm,
@@ -79,7 +83,7 @@ class UserActivities:
         template = "signin.html"
 
         def get(self, request):
-            if 'user' in request.session.keys():
+            if 'user' in list(request.session.keys()):
                 # If user already logged in, redirect to homepage
                 messages.success(request, "You are already signed in.")
                 return HttpResponseRedirect('/')
@@ -124,7 +128,7 @@ class UserActivities:
 
         def get(self, request):
             """Handles user's sign out action"""
-            if 'user' in request.session.keys():
+            if 'user' in list(request.session.keys()):
                 del request.session['user']
                 del request.session['usertype']
             return HttpResponseRedirect('/')
@@ -136,7 +140,7 @@ class UserActivities:
         template = 'signup.html'
 
         def get(self, request):
-            if 'user' in request.session.keys():
+            if 'user' in list(request.session.keys()):
                 # If user already logged in, redirect to homepage
                 messages.success(request, "You are already signed in.")
                 return HttpResponseRedirect('/')
@@ -243,7 +247,7 @@ class ResourceActivities:
                         subject=input_subject, resourcefile=input_file,
                         uploader=resource_uploader)
                     resource.save()
-                except Exception, e:
+                except Exception as e:
                     self.error = e
                     return render(request, self.template,
                                   {
@@ -377,6 +381,42 @@ def view_subject(request, subject_id):
 class SubjectActivities:
     """Subscribes user to a subject."""
 
+    class NewSubject(View):
+
+        template = 'new_subject.html'
+        error = ''
+        status = 200
+
+        def get(self, request):
+            department_list = Department.objects.all()
+            return render(request, self.template,
+                          {'department_list': department_list})
+
+        def post(self, request):
+            department_list = Department.objects.all()
+            try:
+                form = NewSubjectForm(request.POST)
+                if form.is_valid():
+                    input_code = form.cleaned_data['code']
+                    input_name = form.cleaned_data['name']
+                    input_credit = form.cleaned_data['credit']
+                    input_course = form.cleaned_data['course']
+                    input_semester = form.cleaned_data['semester']
+                    input_department = current_user(request).department.id
+                    subject = Subject(code=input_code, name=input_name,
+                                      credit=input_credit, course=input_course,
+                                      semester=input_semester,
+                                      department_id=input_department)
+                    subject.save()
+                    return HttpResponseRedirect('/subject/' + str(subject.id))
+            except IntegrityError:
+                self.error = 'Subject Code already exists'
+            return render(request, self.template,
+                          {
+                            'department_list': department_list,
+                            'error': self.error},
+                          status=self.status)
+
     class SubscribeUser(View):
 
         error = ""
@@ -431,91 +471,107 @@ class SubjectActivities:
                               'error': self.status
                           }, status=self.status)
 
+    class AssignStaff(View):
+        """Assigns staff to a subject. Available to HOD of the subject."""
 
-def assign_staff(request, subject_id):
-    """Assigns staff to a subject. Available to HOD of the subject."""
-    subject = Subject.objects.get(id=subject_id)
-    is_hod = is_user_hod(request, subject)
-    if request.POST and is_hod:
-        try:
-            form = AssignOrRemoveStaffForm(request.POST)
-            if form.is_valid():
-                for staff_id in form.cleaned_data['staffselect']:
-                    staff = User.objects.get(id=staff_id)
-                    subject.staff.add(staff)
-        except Exception, e:
-            print e
-    else:
-        staff_list = {}
-        for department in Department.objects.all():
-            staff_list[department.name] = [x for x in department.user_set.all()
-                                           if x.status == 'teacher' or
-                                           x.status == 'hod']
-        return render(request, 'assign_staff.html',
-                      {
-                          'is_hod': is_hod,
-                          'staff_list': staff_list,
-                          'subject': subject
-                      })
-    return HttpResponseRedirect('/subject/' + subject_id)
+        error = ""
+        template = "assign_staff.html"
+        status = 200
 
+        def get(self, request, subject_id):
+            subject = Subject.objects.get(id=subject_id)
+            is_hod = is_user_hod(request, subject)
+            staff_list = {}
+            for department in Department.objects.all():
+                staff_list[department.name] = [x for
+                                               x in department.user_set.all()
+                                               if x.status == 'teacher' or
+                                               x.status == 'hod']
+            return render(request, self.template,
+                          {
+                              'is_hod': is_hod,
+                              'staff_list': staff_list,
+                              'subject': subject
+                          })
 
-def remove_staff(request, subject_id):
-    """Removes staff from a subject. Available to HOD of the subject."""
-    subject = Subject.objects.get(id=subject_id)
-    if 'user' in request.session:
-        user = current_user(request)
-        if user.status == 'hod' and user.department == subject.department:
-            is_hod = True
-    if request.POST:
-        print "POST"
-        try:
-            form = AssignOrRemoveStaffForm(request.POST)
-            if form.is_valid():
-                for staff_id in form.cleaned_data['staffselect']:
-                    staff = User.objects.get(id=staff_id)
-                    subject.staff.remove(staff)
-                    subject.save()
-        except Exception, e:
-            print e
-    else:
-        staff_list = subject.staff.all()
-        print staff_list
-        return render(request, 'remove_staff.html',
-                      {
-                          'is_hod': is_hod,
-                          'staff_list': staff_list,
-                          'subject': subject
-                      })
-    return HttpResponseRedirect('/subject/' + subject_id)
+        def post(self, request, subject_id):
+            subject = Subject.objects.get(id=subject_id)
+            is_hod = is_user_hod(request, subject)
+            staff_list = {}
+            for department in Department.objects.all():
+                staff_list[department.name] = [x for
+                                               x in department.user_set.all()
+                                               if x.status == 'teacher' or
+                                               x.status == 'hod']
+            try:
+                if is_hod:
+                    form = AssignOrRemoveStaffForm(request.POST)
+                    if form.is_valid():
+                        for staff_id in form.cleaned_data['staffselect']:
+                            staff = User.objects.get(id=staff_id)
+                            subject.staff.add(staff)
+                    else:
+                        self.error = 'Something went wrong.'
+                        self.status = 500
+                        raise
+                else:
+                    self.error = 'You are not an HOD'
+                    self.status = 403
+            except:
+                return render(request, self.template,
+                              {
+                                  'is_hod': is_hod,
+                                  'staff_list': staff_list,
+                                  'subject': subject,
+                                  'error': self.error
+                              }, status=self.status)
+            return HttpResponseRedirect('/subject/' + subject_id)
 
+    class RemoveStaff(View):
 
-def new_subject(request):
-    """Create a new subject. Available to HODs only"""
-    department_list = Department.objects.all()
-    error = ''
-    if request.POST:
-        try:
-            form = NewSubjectForm(request.POST)
-            if form.is_valid():
-                input_code = form.cleaned_data['code']
-                input_name = form.cleaned_data['name']
-                input_credit = form.cleaned_data['credit']
-                input_course = form.cleaned_data['course']
-                input_semester = form.cleaned_data['semester']
-                input_department = current_user(request).department.id
-                subject = Subject(code=input_code, name=input_name,
-                                  credit=input_credit, course=input_course,
-                                  semester=input_semester,
-                                  department_id=input_department)
-                subject.save()
-                return HttpResponseRedirect('/subject/' + str(subject.id))
-        except IntegrityError:
-            error = 'Subject Code already exists'
-    return render(request, 'new_subject.html',
-                  {'department_list': department_list,
-                   'error': error
-                   })
+        error = ""
+        template = "remove_staff.html"
+        status = 200
+
+        def get(self, request, subject_id):
+            subject = Subject.objects.get(id=subject_id)
+            is_hod = is_user_hod(request, subject)
+            staff_list = subject.staff.all()
+            return render(request, self.template,
+                          {
+                              'is_hod': is_hod,
+                              'staff_list': staff_list,
+                              'subject': subject
+                          })
+
+        def post(self, request, subject_id):
+            subject = Subject.objects.get(id=subject_id)
+            is_hod = is_user_hod(request, subject)
+            staff_list = subject.staff.all()
+            try:
+                if is_hod:
+                    form = AssignOrRemoveStaffForm(request.POST)
+                    if form.is_valid():
+                        for staff_id in form.cleaned_data['staffselect']:
+                            staff = User.objects.get(id=staff_id)
+                            subject.staff.remove(staff)
+                            subject.save()
+                    else:
+                        self.error = 'Something went wrong.'
+                        self.status = 500
+                        raise
+                else:
+                    self.error = 'You are not an HOD'
+                    self.status = 403
+            except:
+                return render(request, self.template,
+                              {
+                                  'is_hod': is_hod,
+                                  'staff_list': staff_list,
+                                  'subject': subject,
+                                  'error': self.error
+                              }, status=self.status)
+            return HttpResponseRedirect('/subject/' + subject_id)
 
 
 def upload_profilepicture(request, username):
@@ -538,8 +594,8 @@ def upload_profilepicture(request, username):
             p = Profile(user_id=user.id)
             p.save()
         if request.POST:
-            print "Post"
-            print p.user.username
+            print("Post")
+            print(p.user.username)
             form = ProfilePictureUploadForm(request.POST, request.FILES)
             if form.is_valid():
                 try:
@@ -553,7 +609,7 @@ def upload_profilepicture(request, username):
                         os.remove(p.picture.path)
                     p.picture = image
                     p.save()
-                    print p.picture.path
+                    print(p.picture.path)
                     returnpath = '/user/' + \
                         user.username + '/crop_profilepicture'
                     return HttpResponseRedirect(returnpath)
@@ -596,8 +652,8 @@ def crop_profilepicture(request, username):
                     cropped_image.save(user.profile.picture.path)
                     return HttpResponseRedirect('/user/' + user.username)
                 else:
-                    print "Failure"
-                    print form
+                    print("Failure")
+                    print(form)
             else:
                 return HttpResponseRedirect('/user/' + user.username)
         else:
@@ -618,8 +674,8 @@ def profile(request, username):
                       {
                           'user': user,
                           'subject_list': subject_list})
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         return render(request, 'error.html',
                       {
                           'error': 'The requested user not found.'
@@ -637,8 +693,8 @@ def edit_user(request, username):
         form = EditProfileForm(request.POST)
         try:
             if form.is_valid():
-                print "Here"
-                print form
+                print("Here")
+                print(form)
                 name = form.cleaned_data['name'] or ""
                 address = form.cleaned_data['address'] or ""
                 email = form.cleaned_data['email'] or ""
@@ -651,8 +707,8 @@ def edit_user(request, username):
                 p.save()
                 user.save()
                 return HttpResponseRedirect('/user/' + user.username)
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
 
     else:
         return render(request, 'edit.html',
@@ -671,7 +727,7 @@ def read_excel_file(excelfilepath, subject):
     for row in workbook.worksheets[0].rows:
         try:
             questiontext = row[1].value
-            print "Text", questiontext
+            print("Text", questiontext)
             questionmodule = row[2].value
             questionmark = row[3].value
             question = Question(text=questiontext,
@@ -680,9 +736,9 @@ def read_excel_file(excelfilepath, subject):
                                 )
             question.subject = subject
             question.save()
-        except Exception, e:
-            print "Error"
-            print e
+        except Exception as e:
+            print("Error")
+            print(e)
             pass
 
 
@@ -728,43 +784,94 @@ def select_random(itemlist, count):
 
 def make_pdf(subject, questions, exam, marks, time):
     """Make the pdf of question paper using LaTex."""
-    print "Questions"
-    print questions
+    print("Questions")
+    print(questions)
     today = datetime.today()
     filename = subject.name.replace(' ', '_') + '_' + \
         str(today.day) + str(today.month) + str(today.year)
-    content = '''
-    \\centering{\\Large{Adi Shankara Institute of Engineering and Technology,
-    Kalady}} \\\\[.5cm]
-    \\centering{\\large{%s}} \\\\[.5cm]
-    \\centering{\\large{%s}} \\\\
-    \\normalsize{Marks: %s \\hfill Time: %s Hrs}\\\\
-    [.5cm]''' % (exam.name, subject.name, marks, time)
+
+    document = Document()
+
+    paragraph = document.add_paragraph()
+    paragraph_format = paragraph.paragraph_format
+    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph_text = 'Adi Shankara Institute of Engineering and Technology'
+    run = paragraph.add_run(paragraph_text)
+    run.bold = True
+    font = run.font
+    font.name = 'Times New Roman'
+    font.size = Pt(14)
+
+    paragraph = document.add_paragraph()
+    paragraph_format = paragraph.paragraph_format
+    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph_text = exam.name
+    paragraph.add_run(paragraph_text)
+
+    paragraph = document.add_paragraph()
+    paragraph_format = paragraph.paragraph_format
+    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph_text = subject.name
+    paragraph.add_run(paragraph_text)
+
+    paragraph = document.add_paragraph()
+    paragraph_format = paragraph.paragraph_format
+    length_of_marks = len(str(marks))
+    length_of_time = len(str(time))
+    number_of_spaces = 45 - \
+        (len('Marks : ') + length_of_marks + len('Time : ') + length_of_time)
+    paragraph_text = "Marks : " + \
+        str(marks) + " " * (100 - number_of_spaces) + "Time : " + str(time)
+    paragraph.add_run(paragraph_text)
+
+#     content = '''
+    # \\centering{\\Large{Adi Shankara Institute of Engineering and Technology,
+    # Kalady}} \\\\[.5cm]
+    # \\centering{\\large{%s}} \\\\[.5cm]
+    # \\centering{\\large{%s}} \\\\
+    # \\normalsize{Marks: %s \\hfill Time: %s Hrs}\\\\
+    # [.5cm]''' % (exam.name, subject.name, marks, time)
     for part in ['Part A', 'Part B', 'Part C']:
+        count = 1
         if questions[part]:
-            content = content + '\\centering{%s}\n' % part
-            content = content + '\\begin{enumerate}\n'
+            paragraph = document.add_paragraph()
+            paragraph_format = paragraph.paragraph_format
+            paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            paragraph_text = part
+            paragraph.add_run(paragraph_text)
+            # content = content + '\\centering{%s}\n' % part
+            # content = content + '\\begin{enumerate}\n'
             for mark in questions[part]:
                 for question in questions[part][mark]:
-                    text = question.text
-                    if len(question.text) > 75:
-                        print "Here", text
-                        pos = text.index(' ', 70)
-                        text = question.text[:pos] + '\\\\' + \
-                            question.text[pos + 1:]
-                    content += '\\item{%s\\hfill%s}\n' % (text, question.mark)
-            content = content + '\\end{enumerate}\n'
-    print content
-    doc = Document(default_filepath='/tmp/' + filename)
-    doc.packages.append(Package('geometry', options=['tmargin=2.5cm',
-                                                     'lmargin=2.5cm',
-                                                     'rmargin=3.0cm',
-                                                     'bmargin=2.0cm']))
-    doc.append(content)
-    doc.generate_pdf()
-    qpinfile = open('/tmp/' + filename + '.pdf')
+                    prefix = str(count) + ". "
+                    text = prefix + question.text
+                    length_of_text = len(text)
+                    if length_of_text > 70:
+                        pos = text.index(' ', 65)
+                        text = text[:pos] + '\n' + \
+                            text[pos + 1:]
+                        length_of_text = len(text[pos + 1:])
+                    paragraph = document.add_paragraph()
+                    paragraph_format = paragraph.paragraph_format
+                    number_of_spaces = 100 - (length_of_text + len(prefix))
+                    paragraph_text = text + " " * \
+                        (number_of_spaces) + "\t" + str(question.mark)
+                    paragraph.add_run(paragraph_text)
+                    count = count + 1
+                    # content += '\\item{%s\\hfill%s}\n' %(text, question.mark)
+            # content = content + '\\end{enumerate}\n'
+    # print content
+    document.save('/tmp/' + filename + '.docx')
+#     doc = Document(default_filepath='/tmp/' + filename)
+    # doc.packages.append(Package('geometry', options=['tmargin=2.5cm',
+    # 'lmargin=2.5cm',
+    # 'rmargin=3.0cm',
+    # 'bmargin=2.0cm']))
+    # doc.append(content)
+    # doc.generate_pdf()
+    qpinfile = open('/tmp/' + filename + '.docx')
     qpfile = File(qpinfile)
-    exam.questionpaper.save(filename + '.pdf', qpfile)
+    exam.questionpaper.save(filename + '.docx', qpfile)
     return '/uploads/' + exam.questionpaper.url
 
 
@@ -815,7 +922,7 @@ def generate_question_paper(request, subject_id):
     subject = Subject.objects.get(id=subject_id)
     QuestionFormSet = formset_factory(QuestionPaperCategoryForm)
     if request.POST:
-        print request.POST
+        print(request.POST)
         QPForm = QuestionPaperGenerateForm(request.POST)
         examname = ''
         totalmarks = ''
@@ -829,7 +936,7 @@ def generate_question_paper(request, subject_id):
             exam.save()
         question_categories_set = QuestionFormSet(request.POST)
         if question_categories_set.is_valid():
-            print "\n\n\n\n\n\n Form Data \n\n\n\n\n\n\n\n"
+            print("\n\n\n\n\n\n Form Data \n\n\n\n\n\n\n\n")
             question_criteria = []
             for form in question_categories_set.forms:
                 if form.is_valid():
