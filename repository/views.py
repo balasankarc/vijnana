@@ -341,43 +341,6 @@ class ResourceActivities:
                           }, status=self.status)
 
 
-def view_subject(request, subject_id):
-    """Displays details and resources of a subject"""
-    try:
-        subject = Subject.objects.get(id=subject_id)
-        resource_list = subject.resource_set.all()
-        subscription_status = True
-        is_hod = False
-        has_staff = False
-        is_staff = False
-        subject_staff_list = subject.staff.all()
-        if subject_staff_list:
-            has_staff = True
-        if 'user' in request.session:
-            user = current_user(request)
-            if subject not in user.subscribedsubjects.all():
-                subscription_status = False
-            if user.status == 'hod' and user.department == subject.department:
-                is_hod = is_user_hod(request, subject)
-            if user in subject.staff.all():
-                is_staff = True
-        return render(request, 'subject_resource_list.html',
-                      {
-                          'subject': subject,
-                          'resource_list': resource_list,
-                          'subscription_status': subscription_status,
-                          'is_hod': is_hod,
-                          'is_staff': is_staff,
-                          'has_staff': has_staff,
-                          'subject_staff_list': subject_staff_list
-                      })
-    except ObjectDoesNotExist:
-        return render(request, 'error.html',
-                      {
-                          'error': 'The subject you requested does not exist.'
-                      }, status=404)
-
-
 class SubjectActivities:
     """Subscribes user to a subject."""
 
@@ -416,6 +379,57 @@ class SubjectActivities:
                             'department_list': department_list,
                             'error': self.error},
                           status=self.status)
+
+    class ViewSubject(View):
+
+        error = ''
+        status = 200
+
+        def get(self, request, subject_id):
+            try:
+                subject = Subject.objects.get(id=subject_id)
+                resource_list = subject.resource_set.all()
+                subscription_status = True
+                is_hod = False
+                has_staff = False
+                is_staff = False
+                subject_staff_list = subject.staff.all()
+                if subject_staff_list:
+                    has_staff = True
+                if 'user' in request.session:
+                    user = current_user(request)
+                    if subject not in user.subscribedsubjects.all():
+                        subscription_status = False
+                    if user.status == 'hod' and \
+                            user.department == subject.department:
+                        is_hod = is_user_hod(request, subject)
+                    if user in subject.staff.all():
+                        is_staff = True
+                return render(request, 'subject_resource_list.html',
+                              {
+                                  'subject': subject,
+                                  'resource_list': resource_list,
+                                  'subscription_status': subscription_status,
+                                  'is_hod': is_hod,
+                                  'is_staff': is_staff,
+                                  'has_staff': has_staff,
+                                  'subject_staff_list': subject_staff_list
+                              })
+            except ObjectDoesNotExist:
+                self.error = 'The subject you requested does not exist.'
+                self.status = 404
+                return render(request, 'error.html',
+                              {
+                                  'error': self.error
+                              }, status=self.status)
+
+        def post(self, request, subject_id):
+            self.error = 'POST Method not supported.'
+            self.status = 405
+            return render(request, 'error.html',
+                          {
+                              'error': self.error
+                          }, status=self.status)
 
     class SubscribeUser(View):
 
