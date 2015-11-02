@@ -207,6 +207,67 @@ class UserActivities:
                               'error': self.error
                           })
 
+    class UploadProfilePicture(View):
+
+        error = ''
+        status = 200
+
+        def post(self, request, username):
+            """Handles upload of profile picture by user."""
+            user = User.objects.get(username=username)
+            if not user or user != current_user(request):
+                self.error = 'You are not permitted to do this.'
+                self.status = 405
+                return render(request, 'error.html',
+                              {
+                                  'error': self.error
+                              }, status=self.status)
+            else:
+                try:
+                    p = user.profile
+                except:
+                    p = Profile(user_id=user.id)
+                    p.save()
+                form = ProfilePictureUploadForm(request.POST, request.FILES)
+                if form.is_valid():
+                    try:
+                        image = request.FILES['image']
+                        w, h = get_image_dimensions(image)
+                        if w < 200 or h < 200 or w > 1000 or h > 1000:
+                            error = """Image dimension should be between 500x500
+                            and 1000x1000"""
+                            raise
+                        if p.picture:
+                            os.remove(p.picture.path)
+                        p.picture = image
+                        p.save()
+                        print(p.picture.path)
+                        returnpath = '/user/' + \
+                            user.username + '/crop_profilepicture'
+                        return HttpResponseRedirect(returnpath)
+                    except:
+                        return render(request, 'uploadprofilepicture.html',
+                                      {'user': user, 'error': error})
+                else:
+                    return render(request, 'uploadprofilepicture.html',
+                                  {'user': user})
+
+        def get(self, request, username):
+            user = User.objects.get(username=username)
+            if not user or user != current_user(request):
+                self.error = 'You are not permitted to do this.'
+                self.status = 405
+                return render(request, 'error.html',
+                              {
+                                  'error': self.error
+                              }, status=self.status)
+            else:
+                return render(request, 'uploadprofilepicture.html',
+                              {'user': user})
+
+    class CropProfilePicture(View):
+        pass
+
 
 class ResourceActivities:
 
@@ -376,8 +437,8 @@ class SubjectActivities:
                 self.error = 'Subject Code already exists'
             return render(request, self.template,
                           {
-                            'department_list': department_list,
-                            'error': self.error},
+                              'department_list': department_list,
+                              'error': self.error},
                           status=self.status)
 
     class ViewSubject(View):
@@ -586,56 +647,6 @@ class SubjectActivities:
                                   'error': self.error
                               }, status=self.status)
             return HttpResponseRedirect('/subject/' + subject_id)
-
-
-def upload_profilepicture(request, username):
-    """Handles upload of profile picture by user."""
-    user = User.objects.get(username=username)
-    if not user:
-        return render(request, 'error.html',
-                      {
-                          'error': 'The user you requested does not exist.'
-                      }, status=404)
-    elif user != current_user(request):
-        return render(request, 'error.html',
-                      {
-                          'error': 'You are not permitted to do this.'
-                      }, status=404)
-    else:
-        try:
-            p = user.profile
-        except:
-            p = Profile(user_id=user.id)
-            p.save()
-        if request.POST:
-            print("Post")
-            print(p.user.username)
-            form = ProfilePictureUploadForm(request.POST, request.FILES)
-            if form.is_valid():
-                try:
-                    image = request.FILES['image']
-                    w, h = get_image_dimensions(image)
-                    if w < 200 or h < 200 or w > 1000 or h > 1000:
-                        error = """Image dimension should be between 500x500
-                        and 1000x1000"""
-                        raise
-                    if p.picture:
-                        os.remove(p.picture.path)
-                    p.picture = image
-                    p.save()
-                    print(p.picture.path)
-                    returnpath = '/user/' + \
-                        user.username + '/crop_profilepicture'
-                    return HttpResponseRedirect(returnpath)
-                except:
-                    return render(request, 'uploadprofilepicture.html',
-                                  {'user': user, 'error': error})
-            else:
-                return render(request, 'uploadprofilepicture.html',
-                              {'user': user})
-        else:
-            return render(request, 'uploadprofilepicture.html', {'user': user})
-        return HttpResponseRedirect('/user/' + user.username)
 
 
 def crop_profilepicture(request, username):
