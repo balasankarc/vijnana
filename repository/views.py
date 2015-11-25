@@ -17,7 +17,7 @@ from PIL import Image
 
 from odf.opendocument import OpenDocumentText
 from odf.style import (Style, TextProperties, ParagraphProperties,
-                       ListLevelProperties)
+                       ListLevelProperties, TabStop, TabStops)
 from odf.text import H, P, List, ListItem, ListStyle, ListLevelStyleNumber
 from odf import teletype
 import math
@@ -50,8 +50,11 @@ def is_user_hod(request, subject):
 
 
 def is_user_current_user(request, username):
-    if username == request.session['user']:
-        return True
+    if request.session['user']:
+        if username == request.session['user']:
+            return True
+        else:
+            return False
     else:
         return False
 
@@ -104,6 +107,10 @@ class UserActivities:
                 return render(request, self.template)
 
         def post(self, request):
+            if 'user' in list(request.session.keys()):
+                # If user already logged in, redirect to homepage
+                messages.success(request, "You are already signed in.")
+                return HttpResponseRedirect('/')
             form = SignInForm(request.POST)
             try:
                 if form.is_valid():
@@ -163,6 +170,11 @@ class UserActivities:
                               {'department_list': self.department_list})
 
         def post(self, request):
+            if 'user' in list(request.session.keys()):
+                # If user already logged in, redirect to homepage
+                messages.success(request, "You are already signed in.")
+                return HttpResponseRedirect('/')
+
             form = SignUpForm(request.POST)
             try:
                 if form.is_valid():
@@ -203,23 +215,27 @@ class UserActivities:
 
         error = ""
         subject_list = []
+        status = 200
 
         def get(self, request, username):
-            user = current_user(request)
-            if user:
+            if is_user_current_user(request):
+                user = current_user(request)
                 if user.status == 'teacher' or user.status == 'hod':
                     self.subject_list = user.teachingsubjects.all()
                 else:
                     self.subject_list = user.subscribedsubjects.all()
                 if not self.subject_list:
                     self.error = 'You are not subscribed to any subjects'
+                    self.status = 404
             else:
-                self.error = 'You are not logged in.'
+                self.error = 'You are not logged in or not allowed to access \
+                        this page.'
+                self.status = 404
             return render(request, 'my_subjects.html',
                           {
                               'subject_list': self.subject_list,
                               'error': self.error
-                          })
+                          }, status=self.status)
 
     class UploadProfilePicture(View):
         """Let's user upload a profile picture."""
@@ -229,8 +245,7 @@ class UserActivities:
 
         def post(self, request, username):
             """Handles upload of profile picture by user."""
-            user = User.objects.get(username=username)
-            if not user or user != current_user(request):
+            if not is_user_current_user(request):
                 self.error = 'You are not permitted to do this.'
                 self.status = 405
                 return render(request, 'error.html',
@@ -238,6 +253,7 @@ class UserActivities:
                                   'error': self.error
                               }, status=self.status)
             else:
+                user = User.objects.get(username=username)
                 try:
                     p = user.profile
                 except:
@@ -269,7 +285,7 @@ class UserActivities:
 
         def get(self, request, username):
             user = User.objects.get(username=username)
-            if not user or user != current_user(request):
+            if not is_user_current_user(request):
                 self.error = 'You are not permitted to do this.'
                 self.status = 405
                 return render(request, 'error.html',
@@ -288,13 +304,7 @@ class UserActivities:
 
         def get(self, request, username):
             user = User.objects.get(username=username)
-            if not user:
-                self.error = 'The user you requested does not exist.'
-                return render(request, 'error.html',
-                              {
-                                  'error': self.error
-                              }, status=404)
-            elif user != current_user(request):
+            if not is_user_current_user(request):
                 return render(request, 'error.html',
                               {
                                   'error': 'You are not permitted to do this.'
@@ -305,13 +315,7 @@ class UserActivities:
 
         def post(self, request, username):
             user = User.objects.get(username=username)
-            if not user:
-                self.error = 'The user you requested does not exist.'
-                return render(request, 'error.html',
-                              {
-                                  'error': self.error
-                              }, status=404)
-            elif user != current_user(request):
+            if not is_user_current_user(request):
                 return render(request, 'error.html',
                               {
                                   'error': 'You are not permitted to do this.'
@@ -328,10 +332,7 @@ class UserActivities:
                     cropped_image.save(user.profile.picture.path)
                     return HttpResponseRedirect('/user/' +
                                                 user.username)
-                else:
-                    return HttpResponseRedirect('/user/' + user.username)
-            else:
-                return HttpResponseRedirect('/user/' + user.username)
+            return HttpResponseRedirect('/user/' + user.username)
 
     class UserProfile(View):
         """Displays profile of a user."""
@@ -360,45 +361,42 @@ class UserActivities:
         """Lets a user edit his/her profile."""
 
         def get(self, request, username):
-            try:
-                user = User.objects.get(username=username)
-            except:
-                user = None
-            if not user:
-                self.error = 'The user you requested does not exist.'
-                return render(request, 'error.html',
-                              {
-                                  'error': self.error
-                              }, status=404)
-            elif user != current_user(request):
+            if not is_user_current_user(request):
                 return render(request, 'error.html',
                               {
                                   'error': 'You are not permitted to do this.'
                               }, status=404)
             else:
+                user = User.objects.get(username=username)
                 return render(request, 'edit.html', {'user': user})
 
         def post(self, request, username):
-            user = User.objects.get(username=username)
-            form = EditProfileForm(request.POST)
-            try:
-                if form.is_valid():
-                    print("Here")
-                    print(form)
-                    name = form.cleaned_data['name'] or ""
-                    address = form.cleaned_data['address'] or ""
-                    email = form.cleaned_data['email'] or ""
-                    bloodgroup = form.cleaned_data['bloodgroup'] or ""
-                    user.name = name
-                    p = user.profile
-                    p.address = address
-                    p.email = email
-                    p.bloodgroup = bloodgroup
-                    p.save()
-                    user.save()
+            if not is_user_current_user(request):
+                return render(request, 'error.html',
+                              {
+                                  'error': 'You are not permitted to do this.'
+                              }, status=404)
+            else:
+                user = User.objects.get(username=username)
+                form = EditProfileForm(request.POST)
+                try:
+                    if form.is_valid():
+                        print("Here")
+                        print(form)
+                        name = form.cleaned_data['name'] or ""
+                        address = form.cleaned_data['address'] or ""
+                        email = form.cleaned_data['email'] or ""
+                        bloodgroup = form.cleaned_data['bloodgroup'] or ""
+                        user.name = name
+                        p = user.profile
+                        p.address = address
+                        p.email = email
+                        p.bloodgroup = bloodgroup
+                        p.save()
+                        user.save()
+                        return HttpResponseRedirect('/user/' + user.username)
+                except Exception:
                     return HttpResponseRedirect('/user/' + user.username)
-            except Exception as e:
-                print(e)
 
 
 class ResourceActivities:
@@ -420,37 +418,51 @@ class ResourceActivities:
         template = "newresource.html"
 
         def get(self, request):
-            return render(request, self.template,
-                          {
-                              'subject_list': self.subject_list,
-                              'type_list': self.RESOURCE_TYPES
-                          })
+            user = current_user(request)
+            if user:
+                return render(request, self.template,
+                              {
+                                  'subject_list': self.subject_list,
+                                  'type_list': self.RESOURCE_TYPES
+                              })
+            else:
+                return render(request, "error.html",
+                              {
+                                  'error': 'You need to be logged in.'
+                              }, status=404)
 
         def post(self, request):
-            form = NewResourceForm(request.POST, request.FILES)
-            if form.is_valid():
-                try:
-                    input_title = form.cleaned_data['title']
-                    input_category = form.cleaned_data['category']
-                    input_subject = Subject.objects.get(
-                        id=form.cleaned_data['subject'])
-                    resource_uploader = User.objects.get(
-                        username=request.session['user'])
-                    input_file = request.FILES['resourcefile']
-                    resource = Resource(
-                        title=input_title, category=input_category,
-                        subject=input_subject, resourcefile=input_file,
-                        uploader=resource_uploader)
-                    resource.save()
-                except Exception as e:
-                    self.error = e
-                    return render(request, self.template,
-                                  {
-                                      'error': self.error,
-                                      'subject_list': self.subject_list,
-                                      'type_list': self.RESOURCE_TYPES
-                                  })
-            return HttpResponseRedirect('/resource/' + str(resource.id))
+            user = current_user(request)
+            if user:
+                form = NewResourceForm(request.POST, request.FILES)
+                if form.is_valid():
+                    try:
+                        input_title = form.cleaned_data['title']
+                        input_category = form.cleaned_data['category']
+                        input_subject = Subject.objects.get(
+                            id=form.cleaned_data['subject'])
+                        resource_uploader = User.objects.get(
+                            username=request.session['user'])
+                        input_file = request.FILES['resourcefile']
+                        resource = Resource(
+                            title=input_title, category=input_category,
+                            subject=input_subject, resourcefile=input_file,
+                            uploader=resource_uploader)
+                        resource.save()
+                    except Exception as e:
+                        self.error = e
+                        return render(request, self.template,
+                                      {
+                                          'error': self.error,
+                                          'subject_list': self.subject_list,
+                                          'type_list': self.RESOURCE_TYPES
+                                      })
+                return HttpResponseRedirect('/resource/' + str(resource.id))
+            else:
+                return render(request, "error.html",
+                              {
+                                  'error': 'You need to be logged in.'
+                              }, status=404)
 
     class GetResource(View):
         """Displays details of a resource"""
@@ -464,12 +476,6 @@ class ResourceActivities:
                               {
                                   'error': 'The requested resource not found.'
                               }, status=404)
-
-        def post(self, request):
-            return render(request, 'error.html',
-                          {
-                              'error': 'POST method not allowed.'
-                          }, status=405)
 
     class GetResourcesOfType(View):
         """Displays resources of a specified type"""
@@ -875,15 +881,6 @@ class SubjectActivities:
             filename = subject.name.replace(' ', '_') + '_' + \
                 str(today.day) + str(today.month) + str(today.year)
             textdoc = OpenDocumentText()
-            listhier = ListStyle(name="MyList")
-            level = 1
-            b = ListLevelStyleNumber(
-                level=str(level))
-            b.setAttribute('numsuffix', ".")
-            listhier.addElement(b)
-            b.addElement(ListLevelProperties(
-                minlabelwidth="%fcm" % (level - .2)))
-            textdoc.styles.addElement(listhier)
             s = textdoc.styles
             h1style = Style(name="Heading 1", family="paragraph")
             h1style.addElement(ParagraphProperties(
@@ -903,19 +900,47 @@ class SubjectActivities:
             s.addElement(h1style)
             s.addElement(h2style)
             s.addElement(h3style)
-            boldstyle = Style(name="Bold", family="text")
-            boldprop = TextProperties(fontweight="bold")
-            boldstyle.addElement(boldprop)
-            textdoc.automaticstyles.addElement(boldstyle)
+ 
+            # Adding tab-stop at 16cm  for questions
+            tabstops_style = TabStops()
+            tabstop_style = TabStop(position="16cm")
+            tabstops_style.addElement(tabstop_style)
+            questionpar = ParagraphProperties()
+            questionpar.addElement(tabstops_style)
+            questionstyle = Style(name="Question", family="paragraph")
+            questionstyle.addElement(questionpar)
+            s.addElement(questionstyle)
+            
+            # Adding tab-stop at 14cm for Time-Marks
+            tabstops_style1 = TabStops()
+            tabstop_style1 = TabStop(position="15cm")
+            tabstops_style1.addElement(tabstop_style1)
+            markpar = ParagraphProperties()
+            markpar.addElement(tabstops_style1)
+            markstyle = Style(name="Mark", family="paragraph")
+            markstyle.addElement(markpar)
+            s.addElement(markstyle)
+
+            # Adding Numbered List
+            listhier = ListStyle(name="MyList")
+            level = 1
+            b = ListLevelStyleNumber(
+                level=str(level))
+            b.setAttribute('numsuffix', ".")
+            listhier.addElement(b)
+            b.addElement(ListLevelProperties(
+                minlabelwidth="%fcm" % (level - .2)))
+ 
+            s.addElement(listhier)
             collegename = H(outlinelevel=1, stylename=h1style,
                             text="Adi Shankara Institute of Engineering \
                                     and Technology")
             textdoc.text.addElement(collegename)
             subjectname = H(outlinelevel=1, stylename=h2style, text=subject)
             textdoc.text.addElement(subjectname)
-            p = P()
+            p = P(stylename=markstyle)
             teletype.addTextToElement(
-                p, u"Time: " + time + "\t\t\t\t\t\tMarks: " + marks + "\n")
+                p, u"Time: " + time + "Hours\tMarks: " + marks + "\n")
             textdoc.text.addElement(p)
             for part in ['Part A', 'Part B', 'Part C']:
                 if questions[part]:
@@ -943,12 +968,10 @@ class SubjectActivities:
                                 else:
                                     newtext += remainingtext
                                     break
-                            count = (100 - len(remainingtext))
-                            count = int(math.ceil(count / 20.0)) * 15
-                            tabs = "\t" * (count / 10)
+                            tabs = "\t" #* (count / 10)
                             newtext += tabs + question.mark
                             elem = ListItem()
-                            p = P()
+                            p = P(stylename=questionstyle)
                             teletype.addTextToElement(p, newtext)
                             elem.addElement(p)
                             partlist.addElement(elem)
