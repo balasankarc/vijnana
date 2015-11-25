@@ -342,6 +342,34 @@ class UserActivities:
                                   'error': 'The requested user not found.'
                               }, status=404)
 
+    class EditUser(View):
+        """Let a user edit his/her profile."""
+        def get(self, request, username):
+            user = User.objects.get(username=username)
+            return render(request, 'edit.html', {'user': user})
+
+        def post(self, request, username):
+            user = User.objects.get(username=username)
+            form = EditProfileForm(request.POST)
+            try:
+                if form.is_valid():
+                    print("Here")
+                    print(form)
+                    name = form.cleaned_data['name'] or ""
+                    address = form.cleaned_data['address'] or ""
+                    email = form.cleaned_data['email'] or ""
+                    bloodgroup = form.cleaned_data['bloodgroup'] or ""
+                    user.name = name
+                    p = user.profile
+                    p.address = address
+                    p.email = email
+                    p.bloodgroup = bloodgroup
+                    p.save()
+                    user.save()
+                    return HttpResponseRedirect('/user/' + user.username)
+            except Exception as e:
+                print(e)
+
 
 class ResourceActivities:
 
@@ -744,43 +772,6 @@ def profile(request, username):
                           'error': 'The requested user not found.'
                       }, status=404)
 
-
-def edit_user(request, username):
-    """Let a user edit his/her profile."""
-    user = User.objects.get(username=username)
-    current_name = user.name or ""
-    current_address = user.profile.address or ""
-    current_email = user.profile.email or ""
-    current_bloodgroup = user.profile.bloodgroup or ""
-    if request.POST:
-        form = EditProfileForm(request.POST)
-        try:
-            if form.is_valid():
-                print("Here")
-                print(form)
-                name = form.cleaned_data['name'] or ""
-                address = form.cleaned_data['address'] or ""
-                email = form.cleaned_data['email'] or ""
-                bloodgroup = form.cleaned_data['bloodgroup'] or ""
-                user.name = name
-                p = user.profile
-                p.address = address
-                p.email = email
-                p.bloodgroup = bloodgroup
-                p.save()
-                user.save()
-                return HttpResponseRedirect('/user/' + user.username)
-        except Exception as e:
-            print(e)
-
-    else:
-        return render(request, 'edit.html',
-                      {'user': user,
-                       'current_name': current_name,
-                       'current_address': current_address,
-                       'current_email': current_email,
-                       'current_bloodgroup': current_bloodgroup,
-                       })
 
 
 def read_excel_file(excelfilepath, subject):
