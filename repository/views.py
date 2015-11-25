@@ -1,8 +1,3 @@
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt
-
-
 import os
 import random
 from datetime import datetime
@@ -19,13 +14,13 @@ from django.shortcuts import render
 from django.views.generic import View
 from openpyxl import load_workbook
 from PIL import Image
+
 from odf.opendocument import OpenDocumentText
 from odf.style import (Style, TextProperties, ParagraphProperties,
-                       ListLevelProperties)
+                       ListLevelProperties, TabStop, TabStops)
 from odf.text import H, P, List, ListItem, ListStyle, ListLevelStyleNumber
 from odf import teletype
 import math
-
 
 
 from .forms import (AssignOrRemoveStaffForm, EditProfileForm, NewResourceForm,
@@ -54,7 +49,18 @@ def is_user_hod(request, subject):
         return False
 
 
+def is_user_current_user(request, username):
+    if request.session['user']:
+        if username == request.session['user']:
+            return True
+        else:
+            return False
+    else:
+        return False
+
+
 class StaticPages:
+    """Class to handle static pages of the app"""
 
     class Home(View):
         """Displays home page"""
@@ -75,15 +81,17 @@ class StaticPages:
                 return render(request, 'home.html')
 
     class About(View):
-        """Displays home page"""
+        """Displays about page"""
 
         def get(self, request):
             return render(request, 'about.html')
 
 
 class UserActivities:
+    """Handle the activities related to user account"""
 
     class UserSignIn(View):
+        """Handle sign-in action of user"""
 
         error = ""
         username = ""
@@ -99,6 +107,10 @@ class UserActivities:
                 return render(request, self.template)
 
         def post(self, request):
+            if 'user' in list(request.session.keys()):
+                # If user already logged in, redirect to homepage
+                messages.success(request, "You are already signed in.")
+                return HttpResponseRedirect('/')
             form = SignInForm(request.POST)
             try:
                 if form.is_valid():
@@ -133,15 +145,16 @@ class UserActivities:
             return HttpResponseRedirect('/')
 
     class UserSignOut(View):
+        """Handle sign-out action of user"""
 
         def get(self, request):
-            """Handles user's sign out action"""
             if 'user' in list(request.session.keys()):
                 del request.session['user']
                 del request.session['usertype']
             return HttpResponseRedirect('/')
 
     class UserSignUp(View):
+        """Handle sign-up action of user"""
 
         department_list = Department.objects.all()
         error = ""
@@ -157,6 +170,11 @@ class UserActivities:
                               {'department_list': self.department_list})
 
         def post(self, request):
+            if 'user' in list(request.session.keys()):
+                # If user already logged in, redirect to homepage
+                messages.success(request, "You are already signed in.")
+                return HttpResponseRedirect('/')
+
             form = SignUpForm(request.POST)
             try:
                 if form.is_valid():
@@ -193,37 +211,41 @@ class UserActivities:
             return HttpResponseRedirect('/')
 
     class UserSubjects(View):
-        """Handles /my_subjects of each user."""
+        """Displays subjects associated to user."""
 
         error = ""
         subject_list = []
+        status = 200
 
         def get(self, request, username):
-            user = current_user(request)
-            if user:
+            if is_user_current_user(request):
+                user = current_user(request)
                 if user.status == 'teacher' or user.status == 'hod':
                     self.subject_list = user.teachingsubjects.all()
                 else:
                     self.subject_list = user.subscribedsubjects.all()
                 if not self.subject_list:
                     self.error = 'You are not subscribed to any subjects'
+                    self.status = 404
             else:
-                self.error = 'You are not logged in.'
+                self.error = 'You are not logged in or not allowed to access \
+                        this page.'
+                self.status = 404
             return render(request, 'my_subjects.html',
                           {
                               'subject_list': self.subject_list,
                               'error': self.error
-                          })
+                          }, status=self.status)
 
     class UploadProfilePicture(View):
+        """Let's user upload a profile picture."""
 
         error = ''
         status = 200
 
         def post(self, request, username):
             """Handles upload of profile picture by user."""
-            user = User.objects.get(username=username)
-            if not user or user != current_user(request):
+            if not is_user_current_user(request):
                 self.error = 'You are not permitted to do this.'
                 self.status = 405
                 return render(request, 'error.html',
@@ -231,6 +253,7 @@ class UserActivities:
                                   'error': self.error
                               }, status=self.status)
             else:
+                user = User.objects.get(username=username)
                 try:
                     p = user.profile
                 except:
@@ -262,7 +285,7 @@ class UserActivities:
 
         def get(self, request, username):
             user = User.objects.get(username=username)
-            if not user or user != current_user(request):
+            if not is_user_current_user(request):
                 self.error = 'You are not permitted to do this.'
                 self.status = 405
                 return render(request, 'error.html',
@@ -274,44 +297,29 @@ class UserActivities:
                               {'user': user})
 
     class CropProfilePicture(View):
+        """Let's user crop an uploaded profile picture."""
 
         error = ''
         status = 200
 
         def get(self, request, username):
-            """Let the user crop the profile picture uploaded."""
             user = User.objects.get(username=username)
-            if not user:
-                self.error = 'The user you requested does not exist.'
-                return render(request, 'error.html',
-                              {
-                                  'error': self.error
-                              }, status=404)
-            elif user != current_user(request):
+            if not is_user_current_user(request):
                 return render(request, 'error.html',
                               {
                                   'error': 'You are not permitted to do this.'
                               }, status=404)
             else:
-                user = User.objects.get(username=username)
                 return render(request, 'cropprofilepicture.html',
                               {'user': user})
 
         def post(self, request, username):
             user = User.objects.get(username=username)
-            if not user:
-                self.error = 'The user you requested does not exist.'
-                return render(request, 'error.html',
-                              {
-                                  'error': self.error
-                              }, status=404)
-            elif user != current_user(request):
+            if not is_user_current_user(request):
                 return render(request, 'error.html',
                               {
                                   'error': 'You are not permitted to do this.'
                               }, status=404)
-            else:
-                user = User.objects.get(username=username)
             if user.profile.picture:
                 form = ProfilePictureCropForm(request.POST)
                 if form.is_valid():
@@ -324,12 +332,11 @@ class UserActivities:
                     cropped_image.save(user.profile.picture.path)
                     return HttpResponseRedirect('/user/' +
                                                 user.username)
-                else:
-                    return HttpResponseRedirect('/user/' + user.username)
-            else:
-                return HttpResponseRedirect('/user/' + user.username)
+            return HttpResponseRedirect('/user/' + user.username)
 
     class UserProfile(View):
+        """Displays profile of a user."""
+
         def get(self, request, username):
             try:
                 user = User.objects.get(username=username)
@@ -351,37 +358,52 @@ class UserActivities:
                               }, status=404)
 
     class EditUser(View):
-        """Let a user edit his/her profile."""
+        """Lets a user edit his/her profile."""
+
         def get(self, request, username):
-            user = User.objects.get(username=username)
-            return render(request, 'edit.html', {'user': user})
+            if not is_user_current_user(request):
+                return render(request, 'error.html',
+                              {
+                                  'error': 'You are not permitted to do this.'
+                              }, status=404)
+            else:
+                user = User.objects.get(username=username)
+                return render(request, 'edit.html', {'user': user})
 
         def post(self, request, username):
-            user = User.objects.get(username=username)
-            form = EditProfileForm(request.POST)
-            try:
-                if form.is_valid():
-                    print("Here")
-                    print(form)
-                    name = form.cleaned_data['name'] or ""
-                    address = form.cleaned_data['address'] or ""
-                    email = form.cleaned_data['email'] or ""
-                    bloodgroup = form.cleaned_data['bloodgroup'] or ""
-                    user.name = name
-                    p = user.profile
-                    p.address = address
-                    p.email = email
-                    p.bloodgroup = bloodgroup
-                    p.save()
-                    user.save()
+            if not is_user_current_user(request):
+                return render(request, 'error.html',
+                              {
+                                  'error': 'You are not permitted to do this.'
+                              }, status=404)
+            else:
+                user = User.objects.get(username=username)
+                form = EditProfileForm(request.POST)
+                try:
+                    if form.is_valid():
+                        print("Here")
+                        print(form)
+                        name = form.cleaned_data['name'] or ""
+                        address = form.cleaned_data['address'] or ""
+                        email = form.cleaned_data['email'] or ""
+                        bloodgroup = form.cleaned_data['bloodgroup'] or ""
+                        user.name = name
+                        p = user.profile
+                        p.address = address
+                        p.email = email
+                        p.bloodgroup = bloodgroup
+                        p.save()
+                        user.save()
+                        return HttpResponseRedirect('/user/' + user.username)
+                except Exception:
                     return HttpResponseRedirect('/user/' + user.username)
-            except Exception as e:
-                print(e)
 
 
 class ResourceActivities:
+    """Handle the activities related to a resource"""
 
     class NewResource(View):
+        """Let's a new resource to be created"""
 
         RESOURCE_TYPES = {
             'Presentation': 'presentation',
@@ -396,39 +418,54 @@ class ResourceActivities:
         template = "newresource.html"
 
         def get(self, request):
-            return render(request, self.template,
-                          {
-                              'subject_list': self.subject_list,
-                              'type_list': self.RESOURCE_TYPES
-                          })
+            user = current_user(request)
+            if user:
+                return render(request, self.template,
+                              {
+                                  'subject_list': self.subject_list,
+                                  'type_list': self.RESOURCE_TYPES
+                              })
+            else:
+                return render(request, "error.html",
+                              {
+                                  'error': 'You need to be logged in.'
+                              }, status=404)
 
         def post(self, request):
-            form = NewResourceForm(request.POST, request.FILES)
-            if form.is_valid():
-                try:
-                    input_title = form.cleaned_data['title']
-                    input_category = form.cleaned_data['category']
-                    input_subject = Subject.objects.get(
-                        id=form.cleaned_data['subject'])
-                    resource_uploader = User.objects.get(
-                        username=request.session['user'])
-                    input_file = request.FILES['resourcefile']
-                    resource = Resource(
-                        title=input_title, category=input_category,
-                        subject=input_subject, resourcefile=input_file,
-                        uploader=resource_uploader)
-                    resource.save()
-                except Exception as e:
-                    self.error = e
-                    return render(request, self.template,
-                                  {
-                                      'error': self.error,
-                                      'subject_list': self.subject_list,
-                                      'type_list': self.RESOURCE_TYPES
-                                  })
-            return HttpResponseRedirect('/resource/' + str(resource.id))
+            user = current_user(request)
+            if user:
+                form = NewResourceForm(request.POST, request.FILES)
+                if form.is_valid():
+                    try:
+                        input_title = form.cleaned_data['title']
+                        input_category = form.cleaned_data['category']
+                        input_subject = Subject.objects.get(
+                            id=form.cleaned_data['subject'])
+                        resource_uploader = User.objects.get(
+                            username=request.session['user'])
+                        input_file = request.FILES['resourcefile']
+                        resource = Resource(
+                            title=input_title, category=input_category,
+                            subject=input_subject, resourcefile=input_file,
+                            uploader=resource_uploader)
+                        resource.save()
+                    except Exception as e:
+                        self.error = e
+                        return render(request, self.template,
+                                      {
+                                          'error': self.error,
+                                          'subject_list': self.subject_list,
+                                          'type_list': self.RESOURCE_TYPES
+                                      })
+                return HttpResponseRedirect('/resource/' + str(resource.id))
+            else:
+                return render(request, "error.html",
+                              {
+                                  'error': 'You need to be logged in.'
+                              }, status=404)
 
     class GetResource(View):
+        """Displays details of a resource"""
 
         def get(self, request, resource_id):
             try:
@@ -440,13 +477,8 @@ class ResourceActivities:
                                   'error': 'The requested resource not found.'
                               }, status=404)
 
-        def post(self, request):
-            return render(request, 'error.html',
-                          {
-                              'error': 'POST method not allowed.'
-                          }, status=405)
-
     class GetResourcesOfType(View):
+        """Displays resources of a specified type"""
 
         RESOURCE_TYPES = {
             'Presentation': 'presentation',
@@ -513,9 +545,10 @@ class ResourceActivities:
 
 
 class SubjectActivities:
-    """Subscribes user to a subject."""
+    """Handle the activities related to a subject"""
 
     class NewSubject(View):
+        """Let's a new subject to be created"""
 
         template = 'new_subject.html'
         error = ''
@@ -552,6 +585,7 @@ class SubjectActivities:
                           status=self.status)
 
     class ViewSubject(View):
+        """Display details of a subject"""
 
         error = ''
         status = 200
@@ -603,6 +637,7 @@ class SubjectActivities:
                           }, status=self.status)
 
     class SubscribeUser(View):
+        """Let's a user subscribe to a subject"""
 
         error = ""
         status = 200
@@ -628,7 +663,7 @@ class SubjectActivities:
                           }, status=self.status)
 
     class UnsubscribeUser(View):
-        """Unsubscribes user from a subject."""
+        """Let's a user unsubscribe to a subject"""
 
         error = ""
         status = 200
@@ -713,6 +748,7 @@ class SubjectActivities:
             return HttpResponseRedirect('/subject/' + subject_id)
 
     class RemoveStaff(View):
+        """Removes staff from a subject. Available to HOD of the subject."""
 
         error = ""
         template = "remove_staff.html"
@@ -758,323 +794,269 @@ class SubjectActivities:
                               }, status=self.status)
             return HttpResponseRedirect('/subject/' + subject_id)
 
+    class UploadQuestionBank(View):
+        """Upload a subject's question bank"""
 
-def read_excel_file(excelfilepath, subject):
-    """Read excel file which contains question bank and create question objects
-    from it."""
-    workbook = load_workbook(filename=excelfilepath)
-    for row in workbook.worksheets[0].rows:
-        try:
-            questiontext = row[1].value
-            print("Text", questiontext)
-            questionmodule = row[2].value
-            questionmark = row[3].value
-            question = Question(text=questiontext,
-                                module=questionmodule,
-                                mark=questionmark
-                                )
-            question.subject = subject
-            question.save()
-        except Exception as e:
-            print("Error")
-            print(e)
-            pass
+        def read_excel_file(self, excelfilepath, subject):
+            """Read excel file which contains question bank and create question objects
+            from it."""
+            workbook = load_workbook(filename=excelfilepath)
+            for row in workbook.worksheets[0].rows:
+                try:
+                    questiontext = row[1].value
+                    print("Text", questiontext)
+                    questionmodule = row[2].value
+                    questionmark = row[3].value
+                    question = Question(text=questiontext,
+                                        module=questionmodule,
+                                        mark=questionmark
+                                        )
+                    question.subject = subject
+                    question.save()
+                except Exception as e:
+                    print("Error")
+                    print(e)
+                    pass
 
+        def get(self, request, subject_id):
+            subject = Subject.objects.get(id=subject_id)
+            return render(request, 'upload_questionbank.html',
+                          {'subject': subject,
+                           'user': current_user(request)})
 
-def upload_question_bank(request, subject_id):
-    """Let staff of a subject upload a question bank for the subject."""
-    subject = Subject.objects.get(id=subject_id)
-    if request.POST:
-        form = QuestionBankUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            try:
-                qbfile = request.FILES['qbfile']
-                with open('/tmp/qb.xlsx', 'wb') as destination:
-                    for chunk in qbfile.chunks():
-                        destination.write(chunk)
-                read_excel_file('/tmp/qb.xlsx', subject)
-                messages.success(request, "Question Bank Uploaded succesfully")
-                return HttpResponseRedirect('/subject/' + subject_id)
-            except:
+        def post(self, request, subject_id):
+            subject = Subject.objects.get(id=subject_id)
+            form = QuestionBankUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                try:
+                    qbfile = request.FILES['qbfile']
+                    with open('/tmp/qb.xlsx', 'wb') as destination:
+                        for chunk in qbfile.chunks():
+                            destination.write(chunk)
+                    self.read_excel_file('/tmp/qb.xlsx', subject)
+                    messages.success(request, "Uploaded succesfully")
+                    return HttpResponseRedirect('/subject/' + subject_id)
+                except:
+                    return render(request, 'upload_questionbank.html',
+                                  {'subject': subject,
+                                   'error': 'Some problem with the file',
+                                   'user': current_user(request)})
+            else:
                 return render(request, 'upload_questionbank.html',
                               {'subject': subject,
                                'error': 'Some problem with the file',
                                'user': current_user(request)})
-    else:
-        return render(request, 'upload_questionbank.html',
-                      {'subject': subject,
-                       'user': current_user(request)})
 
+    class GenerateQuestionPaper(View):
+        """Generate subject's question paper"""
 
-def select_random(itemlist, count):
-    """Select n items randomly from a list. (Implements reservoir sampling)"""
-    result = []
-    N = 0
-    for item in itemlist:
-        N += 1
-        if len(result) < count:
-            result.append(item)
-        else:
-            s = int(random.random() * N)
-            if s < count:
-                result[s] = item
-    return result
+        def get(self, request, subject_id):
+            error = ''
+            subject = Subject.objects.get(id=subject_id)
+            QuestionFormSet = formset_factory(QuestionPaperCategoryForm)
+            question_categories_set = QuestionFormSet()
+            return render(request, 'generatequestionpaper.html',
+                          {'subject': subject,
+                           'qpformset': question_categories_set,
+                           'error': error,
+                           'user': current_user(request)})
 
+        def select_random(self, itemlist, count):
+            """Select n items randomly from a list. (Reservoir sampling)"""
+            result = []
+            N = 0
+            for item in itemlist:
+                N += 1
+                if len(result) < count:
+                    result.append(item)
+                else:
+                    s = int(random.random() * N)
+                    if s < count:
+                        result[s] = item
+            return result
 
-def make_pdf(subject, questions, exam, marks, time):
-    today = datetime.today()
-    filename = subject.name.replace(' ', '_') + '_' + \
-        str(today.day) + str(today.month) + str(today.year)
-    textdoc = OpenDocumentText()
-    listhier = ListStyle(name="MyList")
-    level = 1
-    b = ListLevelStyleNumber(
-        level=str(level))
-    b.setAttribute('numsuffix', ".")
-    listhier.addElement(b)
-    b.addElement(ListLevelProperties(minlabelwidth="%fcm" % (level-.2)))
-    textdoc.styles.addElement(listhier)
-    s = textdoc.styles
-    h1style = Style(name="Heading 1", family="paragraph")
-    h1style.addElement(ParagraphProperties(attributes={'textalign': "center"}))
-    h1style.addElement(TextProperties(
-        attributes={'fontsize': "18pt", 'fontweight': "bold"}))
-    h2style = Style(name="Heading 2", family="paragraph")
-    h2style.addElement(ParagraphProperties(attributes={'textalign': "center"}))
-    h2style.addElement(TextProperties(
-        attributes={'fontsize': "15pt", 'fontweight': "bold"}))
-    h3style = Style(name="Heading 3", family="paragraph")
-    h3style.addElement(ParagraphProperties(attributes={'textalign': "center"}))
-    h3style.addElement(TextProperties(
-        attributes={'fontsize': "13pt", 'fontweight': "bold"}))
-    s.addElement(h1style)
-    s.addElement(h2style)
-    s.addElement(h3style)
-    boldstyle = Style(name="Bold", family="text")
-    boldprop = TextProperties(fontweight="bold")
-    boldstyle.addElement(boldprop)
-    textdoc.automaticstyles.addElement(boldstyle)
-    collegename = H(outlinelevel=1, stylename=h1style,
-                    text="Adi Shankara Institute of Engineering and Technology")
-    textdoc.text.addElement(collegename)
-    subjectname = H(outlinelevel=1, stylename=h2style, text=subject)
-    textdoc.text.addElement(subjectname)
-    p = P()
-    teletype.addTextToElement(p, u"Time: "+time+"\t\t\t\t\t\tMarks: "+marks+"\n")
-    textdoc.text.addElement(p)
-    for part in ['Part A', 'Part B', 'Part C']:
-        if questions[part]:
-            print part
-            partname = H(outlinelevel=1, stylename=h3style, text=part)
-            textdoc.text.addElement(partname)
-            partlist = List(stylename=listhier)
-            textdoc.text.addElement(partlist)
-            for mark in questions[part]:
-                for question in questions[part][mark]:
-                    oldtext = question.text
-                    remainingtext = oldtext
-                    stripedtext = ""
-                    newtext = ""
-                    while True:
-                        if len(remainingtext) > 80:
-                            try:
-                                pos = remainingtext.index(' ', 75)
-                            except:
-                                pos = len(remainingtext) - remainingtext[::-1].index(' ')
-                            stripedtext = remainingtext[:pos] + "\n"
-                            remainingtext = remainingtext[pos + 1:]
-                            newtext += stripedtext
-                        else:
-                            newtext += remainingtext
-                            break
-                    count = (100-len(remainingtext))
-                    count = int(math.ceil(count / 20.0)) * 15
-                    tabs = "\t"*(count/10)
-                    newtext += tabs+question.mark
-                    elem = ListItem()
-                    p = P()
-                    teletype.addTextToElement(p, newtext)
-                    elem.addElement(p)
-                    partlist.addElement(elem)
-    textdoc.save("/tmp/" + filename + ".odt")
-    qpinfile = open('/tmp/' + filename + '.odt')
-    qpfile = File(qpinfile)
-    exam.questionpaper.save(filename + '.odt', qpfile)
-    return '/uploads/' + exam.questionpaper.url
+        def make_document(self, subject, questions, exam, marks, time):
+            """Create a document from the generated question set"""
+            today = datetime.today()
+            filename = subject.name.replace(' ', '_') + '_' + \
+                str(today.day) + str(today.month) + str(today.year)
+            textdoc = OpenDocumentText()
+            s = textdoc.styles
+            h1style = Style(name="Heading 1", family="paragraph")
+            h1style.addElement(ParagraphProperties(
+                attributes={'textalign': "center"}))
+            h1style.addElement(TextProperties(
+                attributes={'fontsize': "18pt", 'fontweight': "bold"}))
+            h2style = Style(name="Heading 2", family="paragraph")
+            h2style.addElement(ParagraphProperties(
+                attributes={'textalign': "center"}))
+            h2style.addElement(TextProperties(
+                attributes={'fontsize': "15pt", 'fontweight': "bold"}))
+            h3style = Style(name="Heading 3", family="paragraph")
+            h3style.addElement(ParagraphProperties(
+                attributes={'textalign': "center"}))
+            h3style.addElement(TextProperties(
+                attributes={'fontsize': "13pt", 'fontweight': "bold"}))
+            s.addElement(h1style)
+            s.addElement(h2style)
+            s.addElement(h3style)
+ 
+            # Adding tab-stop at 16cm  for questions
+            tabstops_style = TabStops()
+            tabstop_style = TabStop(position="16cm")
+            tabstops_style.addElement(tabstop_style)
+            questionpar = ParagraphProperties()
+            questionpar.addElement(tabstops_style)
+            questionstyle = Style(name="Question", family="paragraph")
+            questionstyle.addElement(questionpar)
+            s.addElement(questionstyle)
+            
+            # Adding tab-stop at 14cm for Time-Marks
+            tabstops_style1 = TabStops()
+            tabstop_style1 = TabStop(position="15cm")
+            tabstops_style1.addElement(tabstop_style1)
+            markpar = ParagraphProperties()
+            markpar.addElement(tabstops_style1)
+            markstyle = Style(name="Mark", family="paragraph")
+            markstyle.addElement(markpar)
+            s.addElement(markstyle)
 
+            # Adding Numbered List
+            listhier = ListStyle(name="MyList")
+            level = 1
+            b = ListLevelStyleNumber(
+                level=str(level))
+            b.setAttribute('numsuffix', ".")
+            listhier.addElement(b)
+            b.addElement(ListLevelProperties(
+                minlabelwidth="%fcm" % (level - .2)))
+ 
+            s.addElement(listhier)
+            collegename = H(outlinelevel=1, stylename=h1style,
+                            text="Adi Shankara Institute of Engineering \
+                                    and Technology")
+            textdoc.text.addElement(collegename)
+            subjectname = H(outlinelevel=1, stylename=h2style, text=subject)
+            textdoc.text.addElement(subjectname)
+            p = P(stylename=markstyle)
+            teletype.addTextToElement(
+                p, u"Time: " + time + "Hours\tMarks: " + marks + "\n")
+            textdoc.text.addElement(p)
+            for part in ['Part A', 'Part B', 'Part C']:
+                if questions[part]:
+                    print part
+                    partname = H(outlinelevel=1, stylename=h3style, text=part)
+                    textdoc.text.addElement(partname)
+                    partlist = List(stylename=listhier)
+                    textdoc.text.addElement(partlist)
+                    for mark in questions[part]:
+                        for question in questions[part][mark]:
+                            oldtext = question.text
+                            remainingtext = oldtext
+                            stripedtext = ""
+                            newtext = ""
+                            while True:
+                                if len(remainingtext) > 80:
+                                    try:
+                                        pos = remainingtext.index(' ', 75)
+                                    except:
+                                        pos = len(remainingtext) - \
+                                            remainingtext[::-1].index(' ')
+                                    stripedtext = remainingtext[:pos] + "\n"
+                                    remainingtext = remainingtext[pos + 1:]
+                                    newtext += stripedtext
+                                else:
+                                    newtext += remainingtext
+                                    break
+                            tabs = "\t" #* (count / 10)
+                            newtext += tabs + question.mark
+                            elem = ListItem()
+                            p = P(stylename=questionstyle)
+                            teletype.addTextToElement(p, newtext)
+                            elem.addElement(p)
+                            partlist.addElement(elem)
+            textdoc.save("/tmp/" + filename + ".odt")
+            qpinfile = open('/tmp/' + filename + '.odt')
+            qpfile = File(qpinfile)
+            exam.questionpaper.save(filename + '.odt', qpfile)
+            return '/uploads/' + exam.questionpaper.url
 
-def make_pdf1(subject, questions, exam, marks, time):
-    """Make the pdf of question paper using LaTex."""
-    print("Questions")
-    print(questions)
-    today = datetime.today()
-    filename = subject.name.replace(' ', '_') + '_' + \
-        str(today.day) + str(today.month) + str(today.year)
+        def create_qp_dataset(self, subject, exam, totalmarks, time, criteria):
+            """Populates the dataset needed to generate a question paper. Invokes
+            make_document() method"""
+            questions = {'Part A': {}, 'Part B': {}, 'Part C': {}}
+            status = 0
+            for trio in criteria:
+                module = trio[0]
+                try:
+                    mark = int(trio[1])
+                except:
+                    mark = float(trio[1])
+                count = int(trio[2])
+                questiontotallist = Question.objects.filter(
+                    module=module, mark=mark)
+                selectedquestions = self.select_random(
+                    questiontotallist, count)
+                if subject.course == 'B.Tech':
+                    if mark >= 10:
+                        part = 'Part C'
+                    elif mark >= 4:
+                        part = 'Part B'
+                    else:
+                        part = 'Part A'
+                elif subject.course == 'M.Tech':
+                    if mark >= 10:
+                        part = 'Part B'
+                    else:
+                        part = 'Part A'
+                if mark not in questions[part]:
+                    questions[part][mark] = []
+                questions[part][mark] = questions[
+                    part][mark] + selectedquestions
+            if questions:
+                for part in questions:
+                    for mark in questions[part]:
+                        for question in questions[part][mark]:
+                            exam.question_set.add(question)
+                            exam.save()
+                status = 1
+            path = self.make_document(subject, questions, exam, totalmarks, time)
+            return status, path
 
-    document = Document()
-
-    paragraph = document.add_paragraph()
-    paragraph_format = paragraph.paragraph_format
-    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph_text = 'Adi Shankara Institute of Engineering and Technology'
-    run = paragraph.add_run(paragraph_text)
-    run.bold = True
-    font = run.font
-    font.name = 'Times New Roman'
-    font.size = Pt(14)
-
-    paragraph = document.add_paragraph()
-    paragraph_format = paragraph.paragraph_format
-    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph_text = exam.name
-    paragraph.add_run(paragraph_text)
-
-    paragraph = document.add_paragraph()
-    paragraph_format = paragraph.paragraph_format
-    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph_text = subject.name
-    paragraph.add_run(paragraph_text)
-
-    paragraph = document.add_paragraph()
-    paragraph_format = paragraph.paragraph_format
-    length_of_marks = len(str(marks))
-    length_of_time = len(str(time))
-    number_of_spaces = 45 - \
-        (len('Marks : ') + length_of_marks + len('Time : ') + length_of_time)
-    paragraph_text = "Marks : " + \
-        str(marks) + " " * (100 - number_of_spaces) + "Time : " + str(time)
-    paragraph.add_run(paragraph_text)
-
-#     content = '''
-    # \\centering{\\Large{Adi Shankara Institute of Engineering and Technology,
-    # Kalady}} \\\\[.5cm]
-    # \\centering{\\large{%s}} \\\\[.5cm]
-    # \\centering{\\large{%s}} \\\\
-    # \\normalsize{Marks: %s \\hfill Time: %s Hrs}\\\\
-    # [.5cm]''' % (exam.name, subject.name, marks, time)
-    for part in ['Part A', 'Part B', 'Part C']:
-        count = 1
-        if questions[part]:
-            paragraph = document.add_paragraph()
-            paragraph_format = paragraph.paragraph_format
-            paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            paragraph_text = part
-            paragraph.add_run(paragraph_text)
-            # content = content + '\\centering{%s}\n' % part
-            # content = content + '\\begin{enumerate}\n'
-            for mark in questions[part]:
-                for question in questions[part][mark]:
-                    prefix = str(count) + ". "
-                    text = prefix + question.text
-                    length_of_text = len(text)
-                    if length_of_text > 70:
-                        pos = text.index(' ', 65)
-                        text = text[:pos] + '\n' + \
-                            text[pos + 1:]
-                        length_of_text = len(text[pos + 1:])
-                    paragraph = document.add_paragraph()
-                    paragraph_format = paragraph.paragraph_format
-                    number_of_spaces = 100 - (length_of_text + len(prefix))
-                    paragraph_text = text + " " * \
-                        (number_of_spaces) + "\t" + str(question.mark)
-                    paragraph.add_run(paragraph_text)
-                    count = count + 1
-                    # content += '\\item{%s\\hfill%s}\n' %(text, question.mark)
-            # content = content + '\\end{enumerate}\n'
-    # print content
-    document.save('/tmp/' + filename + '.docx')
-#     doc = Document(default_filepath='/tmp/' + filename)
-    # doc.packages.append(Package('geometry', options=['tmargin=2.5cm',
-    # 'lmargin=2.5cm',
-    # 'rmargin=3.0cm',
-    # 'bmargin=2.0cm']))
-    # doc.append(content)
-    # doc.generate_pdf()
-    qpinfile = open('/tmp/' + filename + '.docx')
-    qpfile = File(qpinfile)
-    exam.questionpaper.save(filename + '.docx', qpfile)
-    return '/uploads/' + exam.questionpaper.url
-
-
-def create_qp_dataset(subject, exam, totalmarks, time, question_criteria):
-    """Populates the dataset needed to generate a question paper. Invokes
-    make_pdf() method"""
-    questions = {'Part A': {}, 'Part B': {}, 'Part C': {}}
-    status = 0
-    for trio in question_criteria:
-        module = trio[0]
-        try:
-            mark = int(trio[1])
-        except:
-            mark = float(trio[1])
-        count = int(trio[2])
-        questiontotallist = Question.objects.filter(module=module, mark=mark)
-        selectedquestions = select_random(questiontotallist, count)
-        if subject.course == 'B.Tech':
-            if mark >= 10:
-                part = 'Part C'
-            elif mark >= 4:
-                part = 'Part B'
+        def post(self, request, subject_id):
+            error = ''
+            subject = Subject.objects.get(id=subject_id)
+            QuestionFormSet = formset_factory(QuestionPaperCategoryForm)
+            print(request.POST)
+            QPForm = QuestionPaperGenerateForm(request.POST)
+            examname = ''
+            totalmarks = ''
+            time = ''
+            if QPForm.is_valid():
+                examname = QPForm.cleaned_data['examname']
+                totalmarks = QPForm.cleaned_data['totalmarks']
+                time = QPForm.cleaned_data['time']
+                exam = Exam(name=examname, totalmarks=totalmarks, time=time,
+                            subject_id=subject.id)
+                exam.save()
+            question_categories_set = QuestionFormSet(request.POST)
+            if question_categories_set.is_valid():
+                print("\n\n\n\n\n\n Form Data \n\n\n\n\n\n\n\n")
+                question_criteria = []
+                for form in question_categories_set.forms:
+                    if form.is_valid():
+                        module = form.cleaned_data['module']
+                        mark = form.cleaned_data['mark']
+                        count = form.cleaned_data['count']
+                        question_criteria.append((module, mark, count))
+                status, path = self.create_qp_dataset(subject, exam,
+                                                      totalmarks, time,
+                                                      question_criteria)
+                return HttpResponseRedirect(path)
             else:
-                part = 'Part A'
-        elif subject.course == 'M.Tech':
-            if mark >= 10:
-                part = 'Part B'
-            else:
-                part = 'Part A'
-        if mark not in questions[part]:
-            questions[part][mark] = []
-        questions[part][mark] = questions[part][mark] + selectedquestions
-    if questions:
-        for part in questions:
-            for mark in questions[part]:
-                for question in questions[part][mark]:
-                    exam.question_set.add(question)
-                    exam.save()
-        status = 1
-    path = make_pdf(subject, questions, exam, totalmarks, time)
-    return status, path
-
-
-def generate_question_paper(request, subject_id):
-    """Handles interface through which user enters the question paper
-    attributes. This method invokes create_qp_dataset() method."""
-    error = ''
-    subject = Subject.objects.get(id=subject_id)
-    QuestionFormSet = formset_factory(QuestionPaperCategoryForm)
-    if request.POST:
-        print(request.POST)
-        QPForm = QuestionPaperGenerateForm(request.POST)
-        examname = ''
-        totalmarks = ''
-        time = ''
-        if QPForm.is_valid():
-            examname = QPForm.cleaned_data['examname']
-            totalmarks = QPForm.cleaned_data['totalmarks']
-            time = QPForm.cleaned_data['time']
-            exam = Exam(name=examname, totalmarks=totalmarks, time=time,
-                        subject_id=subject.id)
-            exam.save()
-        question_categories_set = QuestionFormSet(request.POST)
-        if question_categories_set.is_valid():
-            print("\n\n\n\n\n\n Form Data \n\n\n\n\n\n\n\n")
-            question_criteria = []
-            for form in question_categories_set.forms:
-                if form.is_valid():
-                    module = form.cleaned_data['module']
-                    mark = form.cleaned_data['mark']
-                    count = form.cleaned_data['count']
-                    question_criteria.append((module, mark, count))
-            status, path = create_qp_dataset(subject, exam, totalmarks,
-                                             time, question_criteria)
-            return HttpResponseRedirect(path)
-        else:
-            error = 'Choose some questions.'
-    else:
-        question_categories_set = QuestionFormSet()
-
-    return render(request, 'generatequestionpaper.html',
-                  {'subject': subject,
-                   'qpformset': question_categories_set,
-                   'error': error,
-                   'user': current_user(request)})
+                error = 'Choose some questions.'
+                return render(request, 'generatequestionpaper.html',
+                              {'subject': subject,
+                               'qpformset': question_categories_set,
+                               'error': error,
+                               'user': current_user(request)})
