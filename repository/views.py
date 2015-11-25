@@ -321,6 +321,27 @@ class UserActivities:
             else:
                 return HttpResponseRedirect('/user/' + user.username)
 
+    class UserProfile(View):
+        def get(self, request, username):
+            try:
+                user = User.objects.get(username=username)
+                subject_list = []
+                if user:
+                    if user.status == 'teacher' or user.status == 'hod':
+                        subject_list = user.teachingsubjects.all()
+                    else:
+                        subject_list = user.subscribedsubjects.all()
+                return render(request, 'profile.html',
+                              {
+                                  'user': user,
+                                  'subject_list': subject_list})
+            except Exception as e:
+                print(e)
+                return render(request, 'error.html',
+                              {
+                                  'error': 'The requested user not found.'
+                              }, status=404)
+
 
 class ResourceActivities:
 
