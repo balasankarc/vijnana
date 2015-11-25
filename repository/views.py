@@ -19,6 +19,14 @@ from django.shortcuts import render
 from django.views.generic import View
 from openpyxl import load_workbook
 from PIL import Image
+from odf.opendocument import OpenDocumentText
+from odf.style import (Style, TextProperties, ParagraphProperties,
+                       ListLevelProperties)
+from odf.text import H, P, List, ListItem, ListStyle, ListLevelStyleNumber
+from odf import teletype
+import math
+
+
 
 from .forms import (AssignOrRemoveStaffForm, EditProfileForm, NewResourceForm,
                     NewSubjectForm, ProfilePictureCropForm,
@@ -814,6 +822,88 @@ def select_random(itemlist, count):
 
 
 def make_pdf(subject, questions, exam, marks, time):
+    today = datetime.today()
+    filename = subject.name.replace(' ', '_') + '_' + \
+        str(today.day) + str(today.month) + str(today.year)
+    textdoc = OpenDocumentText()
+    listhier = ListStyle(name="MyList")
+    level = 1
+    b = ListLevelStyleNumber(
+        level=str(level))
+    b.setAttribute('numsuffix', ".")
+    listhier.addElement(b)
+    b.addElement(ListLevelProperties(minlabelwidth="%fcm" % (level-.2)))
+    textdoc.styles.addElement(listhier)
+    s = textdoc.styles
+    h1style = Style(name="Heading 1", family="paragraph")
+    h1style.addElement(ParagraphProperties(attributes={'textalign': "center"}))
+    h1style.addElement(TextProperties(
+        attributes={'fontsize': "18pt", 'fontweight': "bold"}))
+    h2style = Style(name="Heading 2", family="paragraph")
+    h2style.addElement(ParagraphProperties(attributes={'textalign': "center"}))
+    h2style.addElement(TextProperties(
+        attributes={'fontsize': "15pt", 'fontweight': "bold"}))
+    h3style = Style(name="Heading 3", family="paragraph")
+    h3style.addElement(ParagraphProperties(attributes={'textalign': "center"}))
+    h3style.addElement(TextProperties(
+        attributes={'fontsize': "13pt", 'fontweight': "bold"}))
+    s.addElement(h1style)
+    s.addElement(h2style)
+    s.addElement(h3style)
+    boldstyle = Style(name="Bold", family="text")
+    boldprop = TextProperties(fontweight="bold")
+    boldstyle.addElement(boldprop)
+    textdoc.automaticstyles.addElement(boldstyle)
+    collegename = H(outlinelevel=1, stylename=h1style,
+                    text="Adi Shankara Institute of Engineering and Technology")
+    textdoc.text.addElement(collegename)
+    subjectname = H(outlinelevel=1, stylename=h2style, text=subject)
+    textdoc.text.addElement(subjectname)
+    p = P()
+    teletype.addTextToElement(p, u"Time: "+time+"\t\t\t\t\t\tMarks: "+marks+"\n")
+    textdoc.text.addElement(p)
+    for part in ['Part A', 'Part B', 'Part C']:
+        if questions[part]:
+            print part
+            partname = H(outlinelevel=1, stylename=h3style, text=part)
+            textdoc.text.addElement(partname)
+            partlist = List(stylename=listhier)
+            textdoc.text.addElement(partlist)
+            for mark in questions[part]:
+                for question in questions[part][mark]:
+                    oldtext = question.text
+                    remainingtext = oldtext
+                    stripedtext = ""
+                    newtext = ""
+                    while True:
+                        if len(remainingtext) > 80:
+                            try:
+                                pos = remainingtext.index(' ', 75)
+                            except:
+                                pos = len(remainingtext) - remainingtext[::-1].index(' ')
+                            stripedtext = remainingtext[:pos] + "\n"
+                            remainingtext = remainingtext[pos + 1:]
+                            newtext += stripedtext
+                        else:
+                            newtext += remainingtext
+                            break
+                    count = (100-len(remainingtext))
+                    count = int(math.ceil(count / 20.0)) * 15
+                    tabs = "\t"*(count/10)
+                    newtext += tabs+question.mark
+                    elem = ListItem()
+                    p = P()
+                    teletype.addTextToElement(p, newtext)
+                    elem.addElement(p)
+                    partlist.addElement(elem)
+    textdoc.save("/tmp/" + filename + ".odt")
+    qpinfile = open('/tmp/' + filename + '.odt')
+    qpfile = File(qpinfile)
+    exam.questionpaper.save(filename + '.odt', qpfile)
+    return '/uploads/' + exam.questionpaper.url
+
+
+def make_pdf1(subject, questions, exam, marks, time):
     """Make the pdf of question paper using LaTex."""
     print("Questions")
     print(questions)
