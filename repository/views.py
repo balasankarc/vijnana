@@ -49,7 +49,15 @@ def is_user_hod(request, subject):
         return False
 
 
+def is_user_current_user(request, username):
+    if username == request.session['user']:
+        return True
+    else:
+        return False
+
+
 class StaticPages:
+    """Class to handle static pages of the app"""
 
     class Home(View):
         """Displays home page"""
@@ -70,15 +78,17 @@ class StaticPages:
                 return render(request, 'home.html')
 
     class About(View):
-        """Displays home page"""
+        """Displays about page"""
 
         def get(self, request):
             return render(request, 'about.html')
 
 
 class UserActivities:
+    """Handle the activities related to user account"""
 
     class UserSignIn(View):
+        """Handle sign-in action of user"""
 
         error = ""
         username = ""
@@ -128,15 +138,16 @@ class UserActivities:
             return HttpResponseRedirect('/')
 
     class UserSignOut(View):
+        """Handle sign-out action of user"""
 
         def get(self, request):
-            """Handles user's sign out action"""
             if 'user' in list(request.session.keys()):
                 del request.session['user']
                 del request.session['usertype']
             return HttpResponseRedirect('/')
 
     class UserSignUp(View):
+        """Handle sign-up action of user"""
 
         department_list = Department.objects.all()
         error = ""
@@ -188,7 +199,7 @@ class UserActivities:
             return HttpResponseRedirect('/')
 
     class UserSubjects(View):
-        """Handles /my_subjects of each user."""
+        """Displays subjects associated to user."""
 
         error = ""
         subject_list = []
@@ -211,6 +222,7 @@ class UserActivities:
                           })
 
     class UploadProfilePicture(View):
+        """Let's user upload a profile picture."""
 
         error = ''
         status = 200
@@ -269,12 +281,12 @@ class UserActivities:
                               {'user': user})
 
     class CropProfilePicture(View):
+        """Let's user crop an uploaded profile picture."""
 
         error = ''
         status = 200
 
         def get(self, request, username):
-            """Let the user crop the profile picture uploaded."""
             user = User.objects.get(username=username)
             if not user:
                 self.error = 'The user you requested does not exist.'
@@ -322,6 +334,7 @@ class UserActivities:
                 return HttpResponseRedirect('/user/' + user.username)
 
     class UserProfile(View):
+        """Displays profile of a user."""
 
         def get(self, request, username):
             try:
@@ -344,7 +357,7 @@ class UserActivities:
                               }, status=404)
 
     class EditUser(View):
-        """Let a user edit his/her profile."""
+        """Lets a user edit his/her profile."""
 
         def get(self, request, username):
             try:
@@ -389,8 +402,10 @@ class UserActivities:
 
 
 class ResourceActivities:
+    """Handle the activities related to a resource"""
 
     class NewResource(View):
+        """Let's a new resource to be created"""
 
         RESOURCE_TYPES = {
             'Presentation': 'presentation',
@@ -438,6 +453,7 @@ class ResourceActivities:
             return HttpResponseRedirect('/resource/' + str(resource.id))
 
     class GetResource(View):
+        """Displays details of a resource"""
 
         def get(self, request, resource_id):
             try:
@@ -456,6 +472,7 @@ class ResourceActivities:
                           }, status=405)
 
     class GetResourcesOfType(View):
+        """Displays resources of a specified type"""
 
         RESOURCE_TYPES = {
             'Presentation': 'presentation',
@@ -522,9 +539,10 @@ class ResourceActivities:
 
 
 class SubjectActivities:
-    """Subscribes user to a subject."""
+    """Handle the activities related to a subject"""
 
     class NewSubject(View):
+        """Let's a new subject to be created"""
 
         template = 'new_subject.html'
         error = ''
@@ -561,6 +579,7 @@ class SubjectActivities:
                           status=self.status)
 
     class ViewSubject(View):
+        """Display details of a subject"""
 
         error = ''
         status = 200
@@ -612,6 +631,7 @@ class SubjectActivities:
                           }, status=self.status)
 
     class SubscribeUser(View):
+        """Let's a user subscribe to a subject"""
 
         error = ""
         status = 200
@@ -637,7 +657,7 @@ class SubjectActivities:
                           }, status=self.status)
 
     class UnsubscribeUser(View):
-        """Unsubscribes user from a subject."""
+        """Let's a user unsubscribe to a subject"""
 
         error = ""
         status = 200
@@ -722,6 +742,7 @@ class SubjectActivities:
             return HttpResponseRedirect('/subject/' + subject_id)
 
     class RemoveStaff(View):
+        """Removes staff from a subject. Available to HOD of the subject."""
 
         error = ""
         template = "remove_staff.html"
@@ -768,6 +789,7 @@ class SubjectActivities:
             return HttpResponseRedirect('/subject/' + subject_id)
 
     class UploadQuestionBank(View):
+        """Upload a subject's question bank"""
 
         def read_excel_file(self, excelfilepath, subject):
             """Read excel file which contains question bank and create question objects
@@ -820,6 +842,7 @@ class SubjectActivities:
                                'user': current_user(request)})
 
     class GenerateQuestionPaper(View):
+        """Generate subject's question paper"""
 
         def get(self, request, subject_id):
             error = ''
@@ -846,7 +869,8 @@ class SubjectActivities:
                         result[s] = item
             return result
 
-        def make_pdf(self, subject, questions, exam, marks, time):
+        def make_document(self, subject, questions, exam, marks, time):
+            """Create a document from the generated question set"""
             today = datetime.today()
             filename = subject.name.replace(' ', '_') + '_' + \
                 str(today.day) + str(today.month) + str(today.year)
@@ -936,7 +960,7 @@ class SubjectActivities:
 
         def create_qp_dataset(self, subject, exam, totalmarks, time, criteria):
             """Populates the dataset needed to generate a question paper. Invokes
-            make_pdf() method"""
+            make_document() method"""
             questions = {'Part A': {}, 'Part B': {}, 'Part C': {}}
             status = 0
             for trio in criteria:
@@ -973,7 +997,7 @@ class SubjectActivities:
                             exam.question_set.add(question)
                             exam.save()
                 status = 1
-            path = self.make_pdf(subject, questions, exam, totalmarks, time)
+            path = self.make_document(subject, questions, exam, totalmarks, time)
             return status, path
 
         def post(self, request, subject_id):
