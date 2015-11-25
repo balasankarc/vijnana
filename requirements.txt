@@ -6,3 +6,4 @@ openpyxl
 pylatex
 django-production-ready
 django-extensions
+odfpy
