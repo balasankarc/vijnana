@@ -750,241 +750,248 @@ class SubjectActivities:
                               }, status=self.status)
             return HttpResponseRedirect('/subject/' + subject_id)
 
+    class UploadQuestionBank(View):
+        def read_excel_file(self, excelfilepath, subject):
+            """Read excel file which contains question bank and create question objects
+            from it."""
+            workbook = load_workbook(filename=excelfilepath)
+            for row in workbook.worksheets[0].rows:
+                try:
+                    questiontext = row[1].value
+                    print("Text", questiontext)
+                    questionmodule = row[2].value
+                    questionmark = row[3].value
+                    question = Question(text=questiontext,
+                                        module=questionmodule,
+                                        mark=questionmark
+                                        )
+                    question.subject = subject
+                    question.save()
+                except Exception as e:
+                    print("Error")
+                    print(e)
+                    pass
 
-def read_excel_file(excelfilepath, subject):
-    """Read excel file which contains question bank and create question objects
-    from it."""
-    workbook = load_workbook(filename=excelfilepath)
-    for row in workbook.worksheets[0].rows:
-        try:
-            questiontext = row[1].value
-            print("Text", questiontext)
-            questionmodule = row[2].value
-            questionmark = row[3].value
-            question = Question(text=questiontext,
-                                module=questionmodule,
-                                mark=questionmark
-                                )
-            question.subject = subject
-            question.save()
-        except Exception as e:
-            print("Error")
-            print(e)
-            pass
+        def get(self, request, subject_id):
+            subject = Subject.objects.get(id=subject_id)
+            return render(request, 'upload_questionbank.html',
+                          {'subject': subject,
+                           'user': current_user(request)})
 
-
-def upload_question_bank(request, subject_id):
-    """Let staff of a subject upload a question bank for the subject."""
-    subject = Subject.objects.get(id=subject_id)
-    if request.POST:
-        form = QuestionBankUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            try:
-                qbfile = request.FILES['qbfile']
-                with open('/tmp/qb.xlsx', 'wb') as destination:
-                    for chunk in qbfile.chunks():
-                        destination.write(chunk)
-                read_excel_file('/tmp/qb.xlsx', subject)
-                messages.success(request, "Question Bank Uploaded succesfully")
-                return HttpResponseRedirect('/subject/' + subject_id)
-            except:
+        def post(self, request, subject_id):
+            subject = Subject.objects.get(id=subject_id)
+            form = QuestionBankUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                try:
+                    qbfile = request.FILES['qbfile']
+                    with open('/tmp/qb.xlsx', 'wb') as destination:
+                        for chunk in qbfile.chunks():
+                            destination.write(chunk)
+                    self.read_excel_file('/tmp/qb.xlsx', subject)
+                    messages.success(request, "Uploaded succesfully")
+                    return HttpResponseRedirect('/subject/' + subject_id)
+                except:
+                    return render(request, 'upload_questionbank.html',
+                                  {'subject': subject,
+                                   'error': 'Some problem with the file',
+                                   'user': current_user(request)})
+            else:
                 return render(request, 'upload_questionbank.html',
                               {'subject': subject,
                                'error': 'Some problem with the file',
                                'user': current_user(request)})
-    else:
-        return render(request, 'upload_questionbank.html',
-                      {'subject': subject,
-                       'user': current_user(request)})
+
+    class GenerateQuestionPaper(View):
+        def get(self, request, subject_id):
+            error = ''
+            subject = Subject.objects.get(id=subject_id)
+            QuestionFormSet = formset_factory(QuestionPaperCategoryForm)
+            question_categories_set = QuestionFormSet()
+            return render(request, 'generatequestionpaper.html',
+                          {'subject': subject,
+                           'qpformset': question_categories_set,
+                           'error': error,
+                           'user': current_user(request)})
 
 
-def select_random(itemlist, count):
-    """Select n items randomly from a list. (Implements reservoir sampling)"""
-    result = []
-    N = 0
-    for item in itemlist:
-        N += 1
-        if len(result) < count:
-            result.append(item)
-        else:
-            s = int(random.random() * N)
-            if s < count:
-                result[s] = item
-    return result
+        def select_random(self, itemlist, count):
+            """Select n items randomly from a list. (Implements reservoir sampling)"""
+            result = []
+            N = 0
+            for item in itemlist:
+                N += 1
+                if len(result) < count:
+                    result.append(item)
+                else:
+                    s = int(random.random() * N)
+                    if s < count:
+                        result[s] = item
+            return result
 
+        def make_pdf(self, subject, questions, exam, marks, time):
+            """Make the pdf of question paper using LaTex."""
+            print("Questions")
+            print(questions)
+            today = datetime.today()
+            filename = subject.name.replace(' ', '_') + '_' + \
+                str(today.day) + str(today.month) + str(today.year)
 
-def make_pdf(subject, questions, exam, marks, time):
-    """Make the pdf of question paper using LaTex."""
-    print("Questions")
-    print(questions)
-    today = datetime.today()
-    filename = subject.name.replace(' ', '_') + '_' + \
-        str(today.day) + str(today.month) + str(today.year)
+            document = Document()
 
-    document = Document()
-
-    paragraph = document.add_paragraph()
-    paragraph_format = paragraph.paragraph_format
-    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph_text = 'Adi Shankara Institute of Engineering and Technology'
-    run = paragraph.add_run(paragraph_text)
-    run.bold = True
-    font = run.font
-    font.name = 'Times New Roman'
-    font.size = Pt(14)
-
-    paragraph = document.add_paragraph()
-    paragraph_format = paragraph.paragraph_format
-    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph_text = exam.name
-    paragraph.add_run(paragraph_text)
-
-    paragraph = document.add_paragraph()
-    paragraph_format = paragraph.paragraph_format
-    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph_text = subject.name
-    paragraph.add_run(paragraph_text)
-
-    paragraph = document.add_paragraph()
-    paragraph_format = paragraph.paragraph_format
-    length_of_marks = len(str(marks))
-    length_of_time = len(str(time))
-    number_of_spaces = 45 - \
-        (len('Marks : ') + length_of_marks + len('Time : ') + length_of_time)
-    paragraph_text = "Marks : " + \
-        str(marks) + " " * (100 - number_of_spaces) + "Time : " + str(time)
-    paragraph.add_run(paragraph_text)
-
-#     content = '''
-    # \\centering{\\Large{Adi Shankara Institute of Engineering and Technology,
-    # Kalady}} \\\\[.5cm]
-    # \\centering{\\large{%s}} \\\\[.5cm]
-    # \\centering{\\large{%s}} \\\\
-    # \\normalsize{Marks: %s \\hfill Time: %s Hrs}\\\\
-    # [.5cm]''' % (exam.name, subject.name, marks, time)
-    for part in ['Part A', 'Part B', 'Part C']:
-        count = 1
-        if questions[part]:
             paragraph = document.add_paragraph()
             paragraph_format = paragraph.paragraph_format
             paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            paragraph_text = part
+            paragraph_text = 'Adi Shankara Institute of Engineering and Technology'
+            run = paragraph.add_run(paragraph_text)
+            run.bold = True
+            font = run.font
+            font.name = 'Times New Roman'
+            font.size = Pt(14)
+
+            paragraph = document.add_paragraph()
+            paragraph_format = paragraph.paragraph_format
+            paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            paragraph_text = exam.name
             paragraph.add_run(paragraph_text)
-            # content = content + '\\centering{%s}\n' % part
-            # content = content + '\\begin{enumerate}\n'
-            for mark in questions[part]:
-                for question in questions[part][mark]:
-                    prefix = str(count) + ". "
-                    text = prefix + question.text
-                    length_of_text = len(text)
-                    if length_of_text > 70:
-                        pos = text.index(' ', 65)
-                        text = text[:pos] + '\n' + \
-                            text[pos + 1:]
-                        length_of_text = len(text[pos + 1:])
+
+            paragraph = document.add_paragraph()
+            paragraph_format = paragraph.paragraph_format
+            paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            paragraph_text = subject.name
+            paragraph.add_run(paragraph_text)
+
+            paragraph = document.add_paragraph()
+            paragraph_format = paragraph.paragraph_format
+            length_of_marks = len(str(marks))
+            length_of_time = len(str(time))
+            number_of_spaces = 45 - \
+                (len('Marks : ') + length_of_marks + len('Time : ') + length_of_time)
+            paragraph_text = "Marks : " + \
+                str(marks) + " " * (100 - number_of_spaces) + "Time : " + str(time)
+            paragraph.add_run(paragraph_text)
+
+        #     content = '''
+            # \\centering{\\Large{Adi Shankara Institute of Engineering and Technology,
+            # Kalady}} \\\\[.5cm]
+            # \\centering{\\large{%s}} \\\\[.5cm]
+            # \\centering{\\large{%s}} \\\\
+            # \\normalsize{Marks: %s \\hfill Time: %s Hrs}\\\\
+            # [.5cm]''' % (exam.name, subject.name, marks, time)
+            for part in ['Part A', 'Part B', 'Part C']:
+                count = 1
+                if questions[part]:
                     paragraph = document.add_paragraph()
                     paragraph_format = paragraph.paragraph_format
-                    number_of_spaces = 100 - (length_of_text + len(prefix))
-                    paragraph_text = text + " " * \
-                        (number_of_spaces) + "\t" + str(question.mark)
+                    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    paragraph_text = part
                     paragraph.add_run(paragraph_text)
-                    count = count + 1
-                    # content += '\\item{%s\\hfill%s}\n' %(text, question.mark)
-            # content = content + '\\end{enumerate}\n'
-    # print content
-    document.save('/tmp/' + filename + '.docx')
-#     doc = Document(default_filepath='/tmp/' + filename)
-    # doc.packages.append(Package('geometry', options=['tmargin=2.5cm',
-    # 'lmargin=2.5cm',
-    # 'rmargin=3.0cm',
-    # 'bmargin=2.0cm']))
-    # doc.append(content)
-    # doc.generate_pdf()
-    qpinfile = open('/tmp/' + filename + '.docx')
-    qpfile = File(qpinfile)
-    exam.questionpaper.save(filename + '.docx', qpfile)
-    return '/uploads/' + exam.questionpaper.url
+                    # content = content + '\\centering{%s}\n' % part
+                    # content = content + '\\begin{enumerate}\n'
+                    for mark in questions[part]:
+                        for question in questions[part][mark]:
+                            prefix = str(count) + ". "
+                            text = prefix + question.text
+                            length_of_text = len(text)
+                            if length_of_text > 70:
+                                pos = text.index(' ', 65)
+                                text = text[:pos] + '\n' + \
+                                    text[pos + 1:]
+                                length_of_text = len(text[pos + 1:])
+                            paragraph = document.add_paragraph()
+                            paragraph_format = paragraph.paragraph_format
+                            number_of_spaces = 100 - (length_of_text + len(prefix))
+                            paragraph_text = text + " " * \
+                                (number_of_spaces) + "\t" + str(question.mark)
+                            paragraph.add_run(paragraph_text)
+                            count = count + 1
+                            # content += '\\item{%s\\hfill%s}\n' %(text, question.mark)
+                    # content = content + '\\end{enumerate}\n'
+            # print content
+            document.save('/tmp/' + filename + '.docx')
+        #     doc = Document(default_filepath='/tmp/' + filename)
+            # doc.packages.append(Package('geometry', options=['tmargin=2.5cm',
+            # 'lmargin=2.5cm',
+            # 'rmargin=3.0cm',
+            # 'bmargin=2.0cm']))
+            # doc.append(content)
+            # doc.generate_pdf()
+            qpinfile = open('/tmp/' + filename + '.docx')
+            qpfile = File(qpinfile)
+            exam.questionpaper.save(filename + '.docx', qpfile)
+            return '/uploads/' + exam.questionpaper.url
 
+        def create_qp_dataset(self, subject, exam, totalmarks, time, question_criteria):
+            """Populates the dataset needed to generate a question paper. Invokes
+            make_pdf() method"""
+            questions = {'Part A': {}, 'Part B': {}, 'Part C': {}}
+            status = 0
+            for trio in question_criteria:
+                module = trio[0]
+                try:
+                    mark = int(trio[1])
+                except:
+                    mark = float(trio[1])
+                count = int(trio[2])
+                questiontotallist = Question.objects.filter(module=module, mark=mark)
+                selectedquestions = self.select_random(questiontotallist, count)
+                if subject.course == 'B.Tech':
+                    if mark >= 10:
+                        part = 'Part C'
+                    elif mark >= 4:
+                        part = 'Part B'
+                    else:
+                        part = 'Part A'
+                elif subject.course == 'M.Tech':
+                    if mark >= 10:
+                        part = 'Part B'
+                    else:
+                        part = 'Part A'
+                if mark not in questions[part]:
+                    questions[part][mark] = []
+                questions[part][mark] = questions[part][mark] + selectedquestions
+            if questions:
+                for part in questions:
+                    for mark in questions[part]:
+                        for question in questions[part][mark]:
+                            exam.question_set.add(question)
+                            exam.save()
+                status = 1
+            path = self.make_pdf(subject, questions, exam, totalmarks, time)
+            return status, path
 
-def create_qp_dataset(subject, exam, totalmarks, time, question_criteria):
-    """Populates the dataset needed to generate a question paper. Invokes
-    make_pdf() method"""
-    questions = {'Part A': {}, 'Part B': {}, 'Part C': {}}
-    status = 0
-    for trio in question_criteria:
-        module = trio[0]
-        try:
-            mark = int(trio[1])
-        except:
-            mark = float(trio[1])
-        count = int(trio[2])
-        questiontotallist = Question.objects.filter(module=module, mark=mark)
-        selectedquestions = select_random(questiontotallist, count)
-        if subject.course == 'B.Tech':
-            if mark >= 10:
-                part = 'Part C'
-            elif mark >= 4:
-                part = 'Part B'
+        def post(self, request, subject_id):
+            error = ''
+            subject = Subject.objects.get(id=subject_id)
+            QuestionFormSet = formset_factory(QuestionPaperCategoryForm)
+            print(request.POST)
+            QPForm = QuestionPaperGenerateForm(request.POST)
+            examname = ''
+            totalmarks = ''
+            time = ''
+            if QPForm.is_valid():
+                examname = QPForm.cleaned_data['examname']
+                totalmarks = QPForm.cleaned_data['totalmarks']
+                time = QPForm.cleaned_data['time']
+                exam = Exam(name=examname, totalmarks=totalmarks, time=time,
+                            subject_id=subject.id)
+                exam.save()
+            question_categories_set = QuestionFormSet(request.POST)
+            if question_categories_set.is_valid():
+                print("\n\n\n\n\n\n Form Data \n\n\n\n\n\n\n\n")
+                question_criteria = []
+                for form in question_categories_set.forms:
+                    if form.is_valid():
+                        module = form.cleaned_data['module']
+                        mark = form.cleaned_data['mark']
+                        count = form.cleaned_data['count']
+                        question_criteria.append((module, mark, count))
+                status, path = self.create_qp_dataset(subject, exam, totalmarks,
+                                                      time, question_criteria)
+                return HttpResponseRedirect(path)
             else:
-                part = 'Part A'
-        elif subject.course == 'M.Tech':
-            if mark >= 10:
-                part = 'Part B'
-            else:
-                part = 'Part A'
-        if mark not in questions[part]:
-            questions[part][mark] = []
-        questions[part][mark] = questions[part][mark] + selectedquestions
-    if questions:
-        for part in questions:
-            for mark in questions[part]:
-                for question in questions[part][mark]:
-                    exam.question_set.add(question)
-                    exam.save()
-        status = 1
-    path = make_pdf(subject, questions, exam, totalmarks, time)
-    return status, path
-
-
-def generate_question_paper(request, subject_id):
-    """Handles interface through which user enters the question paper
-    attributes. This method invokes create_qp_dataset() method."""
-    error = ''
-    subject = Subject.objects.get(id=subject_id)
-    QuestionFormSet = formset_factory(QuestionPaperCategoryForm)
-    if request.POST:
-        print(request.POST)
-        QPForm = QuestionPaperGenerateForm(request.POST)
-        examname = ''
-        totalmarks = ''
-        time = ''
-        if QPForm.is_valid():
-            examname = QPForm.cleaned_data['examname']
-            totalmarks = QPForm.cleaned_data['totalmarks']
-            time = QPForm.cleaned_data['time']
-            exam = Exam(name=examname, totalmarks=totalmarks, time=time,
-                        subject_id=subject.id)
-            exam.save()
-        question_categories_set = QuestionFormSet(request.POST)
-        if question_categories_set.is_valid():
-            print("\n\n\n\n\n\n Form Data \n\n\n\n\n\n\n\n")
-            question_criteria = []
-            for form in question_categories_set.forms:
-                if form.is_valid():
-                    module = form.cleaned_data['module']
-                    mark = form.cleaned_data['mark']
-                    count = form.cleaned_data['count']
-                    question_criteria.append((module, mark, count))
-            status, path = create_qp_dataset(subject, exam, totalmarks,
-                                             time, question_criteria)
-            return HttpResponseRedirect(path)
-        else:
-            error = 'Choose some questions.'
-    else:
-        question_categories_set = QuestionFormSet()
-
-    return render(request, 'generatequestionpaper.html',
-                  {'subject': subject,
-                   'qpformset': question_categories_set,
-                   'error': error,
-                   'user': current_user(request)})
+                error = 'Choose some questions.'
+                return render(request, 'generatequestionpaper.html',
+                              {'subject': subject,
+                               'qpformset': question_categories_set,
+                               'error': error,
+                               'user': current_user(request)})
