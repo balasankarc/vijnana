@@ -266,7 +266,60 @@ class UserActivities:
                               {'user': user})
 
     class CropProfilePicture(View):
-        pass
+
+        error = ''
+        status = 200
+
+        def get(self, request, username):
+            """Let the user crop the profile picture uploaded."""
+            user = User.objects.get(username=username)
+            if not user:
+                self.error = 'The user you requested does not exist.'
+                return render(request, 'error.html',
+                              {
+                                  'error': self.error
+                              }, status=404)
+            elif user != current_user(request):
+                return render(request, 'error.html',
+                              {
+                                  'error': 'You are not permitted to do this.'
+                              }, status=404)
+            else:
+                user = User.objects.get(username=username)
+                return render(request, 'cropprofilepicture.html',
+                              {'user': user})
+
+        def post(self, request, username):
+            user = User.objects.get(username=username)
+            if not user:
+                self.error = 'The user you requested does not exist.'
+                return render(request, 'error.html',
+                              {
+                                  'error': self.error
+                              }, status=404)
+            elif user != current_user(request):
+                return render(request, 'error.html',
+                              {
+                                  'error': 'You are not permitted to do this.'
+                              }, status=404)
+            else:
+                user = User.objects.get(username=username)
+            if user.profile.picture:
+                form = ProfilePictureCropForm(request.POST)
+                if form.is_valid():
+                    x1 = int(float(form.cleaned_data['x1']))
+                    y1 = int(float(form.cleaned_data['y1']))
+                    x2 = int(float(form.cleaned_data['x2']))
+                    y2 = int(float(form.cleaned_data['y2']))
+                    image = Image.open(user.profile.picture.path)
+                    cropped_image = image.crop((x1, y1, x2, y2))
+                    cropped_image.save(user.profile.picture.path)
+                    return HttpResponseRedirect('/user/' +
+                                                user.username)
+                else:
+                    return HttpResponseRedirect('/user/' + user.username)
+            else:
+                return HttpResponseRedirect('/user/' + user.username)
 
 
 class ResourceActivities:
@@ -647,42 +700,6 @@ class SubjectActivities:
                                   'error': self.error
                               }, status=self.status)
             return HttpResponseRedirect('/subject/' + subject_id)
-
-
-def crop_profilepicture(request, username):
-    """Let the user crop the profile picture uploaded."""
-    user = User.objects.get(username=username)
-    if not user:
-        return render(request, 'error.html',
-                      {
-                          'error': 'The user you requested does not exist.'
-                      }, status=404)
-    elif user != current_user(request):
-        return render(request, 'error.html',
-                      {
-                          'error': 'You are not permitted to do this.'
-                      }, status=404)
-    else:
-        user = User.objects.get(username=username)
-        if request.POST:
-            if user.profile.picture:
-                form = ProfilePictureCropForm(request.POST)
-                if form.is_valid():
-                    x1 = int(float(form.cleaned_data['x1']))
-                    y1 = int(float(form.cleaned_data['y1']))
-                    x2 = int(float(form.cleaned_data['x2']))
-                    y2 = int(float(form.cleaned_data['y2']))
-                    image = Image.open(user.profile.picture.path)
-                    cropped_image = image.crop((x1, y1, x2, y2))
-                    cropped_image.save(user.profile.picture.path)
-                    return HttpResponseRedirect('/user/' + user.username)
-                else:
-                    print("Failure")
-                    print(form)
-            else:
-                return HttpResponseRedirect('/user/' + user.username)
-        else:
-            return render(request, 'cropprofilepicture.html', {'user': user})
 
 
 def profile(request, username):
