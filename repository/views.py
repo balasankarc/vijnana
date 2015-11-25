@@ -1,8 +1,3 @@
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt
-
-
 import os
 import random
 from datetime import datetime
@@ -19,6 +14,14 @@ from django.shortcuts import render
 from django.views.generic import View
 from openpyxl import load_workbook
 from PIL import Image
+
+from odf.opendocument import OpenDocumentText
+from odf.style import (Style, TextProperties, ParagraphProperties,
+                       ListLevelProperties)
+from odf.text import H, P, List, ListItem, ListStyle, ListLevelStyleNumber
+from odf import teletype
+import math
+
 
 from .forms import (AssignOrRemoveStaffForm, EditProfileForm, NewResourceForm,
                     NewSubjectForm, ProfilePictureCropForm,
@@ -322,6 +325,7 @@ class UserActivities:
                 return HttpResponseRedirect('/user/' + user.username)
 
     class UserProfile(View):
+
         def get(self, request, username):
             try:
                 user = User.objects.get(username=username)
@@ -344,6 +348,7 @@ class UserActivities:
 
     class EditUser(View):
         """Let a user edit his/her profile."""
+
         def get(self, request, username):
             user = User.objects.get(username=username)
             return render(request, 'edit.html', {'user': user})
@@ -751,6 +756,7 @@ class SubjectActivities:
             return HttpResponseRedirect('/subject/' + subject_id)
 
     class UploadQuestionBank(View):
+
         def read_excel_file(self, excelfilepath, subject):
             """Read excel file which contains question bank and create question objects
             from it."""
@@ -802,6 +808,7 @@ class SubjectActivities:
                                'user': current_user(request)})
 
     class GenerateQuestionPaper(View):
+
         def get(self, request, subject_id):
             error = ''
             subject = Subject.objects.get(id=subject_id)
@@ -813,9 +820,8 @@ class SubjectActivities:
                            'error': error,
                            'user': current_user(request)})
 
-
         def select_random(self, itemlist, count):
-            """Select n items randomly from a list. (Implements reservoir sampling)"""
+            """Select n items randomly from a list. (Reservoir sampling)"""
             result = []
             N = 0
             for item in itemlist:
@@ -829,111 +835,109 @@ class SubjectActivities:
             return result
 
         def make_pdf(self, subject, questions, exam, marks, time):
-            """Make the pdf of question paper using LaTex."""
-            print("Questions")
-            print(questions)
             today = datetime.today()
             filename = subject.name.replace(' ', '_') + '_' + \
                 str(today.day) + str(today.month) + str(today.year)
-
-            document = Document()
-
-            paragraph = document.add_paragraph()
-            paragraph_format = paragraph.paragraph_format
-            paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            paragraph_text = 'Adi Shankara Institute of Engineering and Technology'
-            run = paragraph.add_run(paragraph_text)
-            run.bold = True
-            font = run.font
-            font.name = 'Times New Roman'
-            font.size = Pt(14)
-
-            paragraph = document.add_paragraph()
-            paragraph_format = paragraph.paragraph_format
-            paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            paragraph_text = exam.name
-            paragraph.add_run(paragraph_text)
-
-            paragraph = document.add_paragraph()
-            paragraph_format = paragraph.paragraph_format
-            paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            paragraph_text = subject.name
-            paragraph.add_run(paragraph_text)
-
-            paragraph = document.add_paragraph()
-            paragraph_format = paragraph.paragraph_format
-            length_of_marks = len(str(marks))
-            length_of_time = len(str(time))
-            number_of_spaces = 45 - \
-                (len('Marks : ') + length_of_marks + len('Time : ') + length_of_time)
-            paragraph_text = "Marks : " + \
-                str(marks) + " " * (100 - number_of_spaces) + "Time : " + str(time)
-            paragraph.add_run(paragraph_text)
-
-        #     content = '''
-            # \\centering{\\Large{Adi Shankara Institute of Engineering and Technology,
-            # Kalady}} \\\\[.5cm]
-            # \\centering{\\large{%s}} \\\\[.5cm]
-            # \\centering{\\large{%s}} \\\\
-            # \\normalsize{Marks: %s \\hfill Time: %s Hrs}\\\\
-            # [.5cm]''' % (exam.name, subject.name, marks, time)
+            textdoc = OpenDocumentText()
+            listhier = ListStyle(name="MyList")
+            level = 1
+            b = ListLevelStyleNumber(
+                level=str(level))
+            b.setAttribute('numsuffix', ".")
+            listhier.addElement(b)
+            b.addElement(ListLevelProperties(
+                minlabelwidth="%fcm" % (level - .2)))
+            textdoc.styles.addElement(listhier)
+            s = textdoc.styles
+            h1style = Style(name="Heading 1", family="paragraph")
+            h1style.addElement(ParagraphProperties(
+                attributes={'textalign': "center"}))
+            h1style.addElement(TextProperties(
+                attributes={'fontsize': "18pt", 'fontweight': "bold"}))
+            h2style = Style(name="Heading 2", family="paragraph")
+            h2style.addElement(ParagraphProperties(
+                attributes={'textalign': "center"}))
+            h2style.addElement(TextProperties(
+                attributes={'fontsize': "15pt", 'fontweight': "bold"}))
+            h3style = Style(name="Heading 3", family="paragraph")
+            h3style.addElement(ParagraphProperties(
+                attributes={'textalign': "center"}))
+            h3style.addElement(TextProperties(
+                attributes={'fontsize': "13pt", 'fontweight': "bold"}))
+            s.addElement(h1style)
+            s.addElement(h2style)
+            s.addElement(h3style)
+            boldstyle = Style(name="Bold", family="text")
+            boldprop = TextProperties(fontweight="bold")
+            boldstyle.addElement(boldprop)
+            textdoc.automaticstyles.addElement(boldstyle)
+            collegename = H(outlinelevel=1, stylename=h1style,
+                            text="Adi Shankara Institute of Engineering \
+                                    and Technology")
+            textdoc.text.addElement(collegename)
+            subjectname = H(outlinelevel=1, stylename=h2style, text=subject)
+            textdoc.text.addElement(subjectname)
+            p = P()
+            teletype.addTextToElement(
+                p, u"Time: " + time + "\t\t\t\t\t\tMarks: " + marks + "\n")
+            textdoc.text.addElement(p)
             for part in ['Part A', 'Part B', 'Part C']:
-                count = 1
                 if questions[part]:
-                    paragraph = document.add_paragraph()
-                    paragraph_format = paragraph.paragraph_format
-                    paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    paragraph_text = part
-                    paragraph.add_run(paragraph_text)
-                    # content = content + '\\centering{%s}\n' % part
-                    # content = content + '\\begin{enumerate}\n'
+                    print part
+                    partname = H(outlinelevel=1, stylename=h3style, text=part)
+                    textdoc.text.addElement(partname)
+                    partlist = List(stylename=listhier)
+                    textdoc.text.addElement(partlist)
                     for mark in questions[part]:
                         for question in questions[part][mark]:
-                            prefix = str(count) + ". "
-                            text = prefix + question.text
-                            length_of_text = len(text)
-                            if length_of_text > 70:
-                                pos = text.index(' ', 65)
-                                text = text[:pos] + '\n' + \
-                                    text[pos + 1:]
-                                length_of_text = len(text[pos + 1:])
-                            paragraph = document.add_paragraph()
-                            paragraph_format = paragraph.paragraph_format
-                            number_of_spaces = 100 - (length_of_text + len(prefix))
-                            paragraph_text = text + " " * \
-                                (number_of_spaces) + "\t" + str(question.mark)
-                            paragraph.add_run(paragraph_text)
-                            count = count + 1
-                            # content += '\\item{%s\\hfill%s}\n' %(text, question.mark)
-                    # content = content + '\\end{enumerate}\n'
-            # print content
-            document.save('/tmp/' + filename + '.docx')
-        #     doc = Document(default_filepath='/tmp/' + filename)
-            # doc.packages.append(Package('geometry', options=['tmargin=2.5cm',
-            # 'lmargin=2.5cm',
-            # 'rmargin=3.0cm',
-            # 'bmargin=2.0cm']))
-            # doc.append(content)
-            # doc.generate_pdf()
-            qpinfile = open('/tmp/' + filename + '.docx')
+                            oldtext = question.text
+                            remainingtext = oldtext
+                            stripedtext = ""
+                            newtext = ""
+                            while True:
+                                if len(remainingtext) > 80:
+                                    try:
+                                        pos = remainingtext.index(' ', 75)
+                                    except:
+                                        pos = len(remainingtext) - \
+                                            remainingtext[::-1].index(' ')
+                                    stripedtext = remainingtext[:pos] + "\n"
+                                    remainingtext = remainingtext[pos + 1:]
+                                    newtext += stripedtext
+                                else:
+                                    newtext += remainingtext
+                                    break
+                            count = (100 - len(remainingtext))
+                            count = int(math.ceil(count / 20.0)) * 15
+                            tabs = "\t" * (count / 10)
+                            newtext += tabs + question.mark
+                            elem = ListItem()
+                            p = P()
+                            teletype.addTextToElement(p, newtext)
+                            elem.addElement(p)
+                            partlist.addElement(elem)
+            textdoc.save("/tmp/" + filename + ".odt")
+            qpinfile = open('/tmp/' + filename + '.odt')
             qpfile = File(qpinfile)
-            exam.questionpaper.save(filename + '.docx', qpfile)
+            exam.questionpaper.save(filename + '.odt', qpfile)
             return '/uploads/' + exam.questionpaper.url
 
-        def create_qp_dataset(self, subject, exam, totalmarks, time, question_criteria):
+        def create_qp_dataset(self, subject, exam, totalmarks, time, criteria):
             """Populates the dataset needed to generate a question paper. Invokes
             make_pdf() method"""
             questions = {'Part A': {}, 'Part B': {}, 'Part C': {}}
             status = 0
-            for trio in question_criteria:
+            for trio in criteria:
                 module = trio[0]
                 try:
                     mark = int(trio[1])
                 except:
                     mark = float(trio[1])
                 count = int(trio[2])
-                questiontotallist = Question.objects.filter(module=module, mark=mark)
-                selectedquestions = self.select_random(questiontotallist, count)
+                questiontotallist = Question.objects.filter(
+                    module=module, mark=mark)
+                selectedquestions = self.select_random(
+                    questiontotallist, count)
                 if subject.course == 'B.Tech':
                     if mark >= 10:
                         part = 'Part C'
@@ -948,7 +952,8 @@ class SubjectActivities:
                         part = 'Part A'
                 if mark not in questions[part]:
                     questions[part][mark] = []
-                questions[part][mark] = questions[part][mark] + selectedquestions
+                questions[part][mark] = questions[
+                    part][mark] + selectedquestions
             if questions:
                 for part in questions:
                     for mark in questions[part]:
@@ -985,8 +990,9 @@ class SubjectActivities:
                         mark = form.cleaned_data['mark']
                         count = form.cleaned_data['count']
                         question_criteria.append((module, mark, count))
-                status, path = self.create_qp_dataset(subject, exam, totalmarks,
-                                                      time, question_criteria)
+                status, path = self.create_qp_dataset(subject, exam,
+                                                      totalmarks, time,
+                                                      question_criteria)
                 return HttpResponseRedirect(path)
             else:
                 error = 'Choose some questions.'
