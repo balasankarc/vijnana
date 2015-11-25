@@ -20,7 +20,6 @@ from odf.style import (Style, TextProperties, ParagraphProperties,
                        ListLevelProperties, TabStop, TabStops)
 from odf.text import H, P, List, ListItem, ListStyle, ListLevelStyleNumber
 from odf import teletype
-import math
 
 
 from .forms import (AssignOrRemoveStaffForm, EditProfileForm, NewResourceForm,
@@ -930,8 +929,8 @@ class SubjectActivities:
             listhier.addElement(b)
             b.addElement(ListLevelProperties(
                 minlabelwidth="%fcm" % (level - .2)))
- 
             s.addElement(listhier)
+
             collegename = H(outlinelevel=1, stylename=h1style,
                             text="Adi Shankara Institute of Engineering \
                                     and Technology")
@@ -940,8 +939,9 @@ class SubjectActivities:
             textdoc.text.addElement(subjectname)
             p = P(stylename=markstyle)
             teletype.addTextToElement(
-                p, u"Time: " + time + "Hours\tMarks: " + marks + "\n")
+                p, u"Time: " + time + "\tMarks: " + marks + "\n")
             textdoc.text.addElement(p)
+
             for part in ['Part A', 'Part B', 'Part C']:
                 if questions[part]:
                     print part
@@ -968,7 +968,7 @@ class SubjectActivities:
                                 else:
                                     newtext += remainingtext
                                     break
-                            tabs = "\t" #* (count / 10)
+                            tabs = "\t"
                             newtext += tabs + question.mark
                             elem = ListItem()
                             p = P(stylename=questionstyle)
