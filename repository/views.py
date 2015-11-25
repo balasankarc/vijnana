@@ -751,29 +751,6 @@ class SubjectActivities:
             return HttpResponseRedirect('/subject/' + subject_id)
 
 
-def profile(request, username):
-    """Displays profile of a user."""
-    try:
-        user = User.objects.get(username=username)
-        subject_list = []
-        if user:
-            if user.status == 'teacher' or user.status == 'hod':
-                subject_list = user.teachingsubjects.all()
-            else:
-                subject_list = user.subscribedsubjects.all()
-        return render(request, 'profile.html',
-                      {
-                          'user': user,
-                          'subject_list': subject_list})
-    except Exception as e:
-        print(e)
-        return render(request, 'error.html',
-                      {
-                          'error': 'The requested user not found.'
-                      }, status=404)
-
-
-
 def read_excel_file(excelfilepath, subject):
     """Read excel file which contains question bank and create question objects
     from it."""
