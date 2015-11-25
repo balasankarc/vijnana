@@ -288,7 +288,6 @@ class UserActivities:
                                   'error': 'You are not permitted to do this.'
                               }, status=404)
             else:
-                user = User.objects.get(username=username)
                 return render(request, 'cropprofilepicture.html',
                               {'user': user})
 
@@ -305,8 +304,6 @@ class UserActivities:
                               {
                                   'error': 'You are not permitted to do this.'
                               }, status=404)
-            else:
-                user = User.objects.get(username=username)
             if user.profile.picture:
                 form = ProfilePictureCropForm(request.POST)
                 if form.is_valid():
@@ -350,8 +347,23 @@ class UserActivities:
         """Let a user edit his/her profile."""
 
         def get(self, request, username):
-            user = User.objects.get(username=username)
-            return render(request, 'edit.html', {'user': user})
+            try:
+                user = User.objects.get(username=username)
+            except:
+                user = None
+            if not user:
+                self.error = 'The user you requested does not exist.'
+                return render(request, 'error.html',
+                              {
+                                  'error': self.error
+                              }, status=404)
+            elif user != current_user(request):
+                return render(request, 'error.html',
+                              {
+                                  'error': 'You are not permitted to do this.'
+                              }, status=404)
+            else:
+                return render(request, 'edit.html', {'user': user})
 
         def post(self, request, username):
             user = User.objects.get(username=username)
