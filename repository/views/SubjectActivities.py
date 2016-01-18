@@ -289,15 +289,25 @@ class UploadQuestionBank(View):
         for row in workbook.worksheets[0].rows:
             try:
                 questiontext = row[1].value
-                print("Text", questiontext)
+                print "Question Text: ", questiontext
                 questionmodule = row[2].value
-                questionmark = row[3].value
+                print "Question Module: ", questionmodule
+                questionpart = row[4].value
+                print "Question Part: ", questionpart
+                questionco = row[3].value
+                print "Question CO: ", questionco
+                questionlevel = row[5].value
+                print "Question Level: ", questionlevel
                 question = Question(text=questiontext,
                                     module=questionmodule,
-                                    mark=questionmark
+                                    part=questionpart,
+                                    co=questionco,
+                                    level=questionlevel
                                     )
                 question.subject = subject
                 question.save()
+                print questiontext, questionmodule, questionpart, \
+                    questionco, questionlevel
             except Exception as e:
                 print("Error")
                 print(e)
@@ -435,32 +445,31 @@ class GenerateQuestionPaper(View):
                 textdoc.text.addElement(partname)
                 partlist = List(stylename=listhier)
                 textdoc.text.addElement(partlist)
-                for mark in questions[part]:
-                    for question in questions[part][mark]:
-                        oldtext = question.text
-                        remainingtext = oldtext
-                        stripedtext = ""
-                        newtext = ""
-                        while True:
-                            if len(remainingtext) > 80:
-                                try:
-                                    pos = remainingtext.index(' ', 75)
-                                except:
-                                    pos = len(remainingtext) - \
-                                        remainingtext[::-1].index(' ')
-                                stripedtext = remainingtext[:pos] + "\n"
-                                remainingtext = remainingtext[pos + 1:]
-                                newtext += stripedtext
-                            else:
-                                newtext += remainingtext
-                                break
-                        tabs = "\t"  # * (count / 10)
-                        newtext += tabs + question.mark
-                        elem = ListItem()
-                        p = P(stylename=questionstyle)
-                        teletype.addTextToElement(p, newtext)
-                        elem.addElement(p)
-                        partlist.addElement(elem)
+                for question in questions[part]:
+                    oldtext = question.text
+                    remainingtext = oldtext
+                    stripedtext = ""
+                    newtext = ""
+                    while True:
+                        if len(remainingtext) > 80:
+                            try:
+                                pos = remainingtext.index(' ', 75)
+                            except:
+                                pos = len(remainingtext) - \
+                                    remainingtext[::-1].index(' ')
+                            stripedtext = remainingtext[:pos] + "\n"
+                            remainingtext = remainingtext[pos + 1:]
+                            newtext += stripedtext
+                        else:
+                            newtext += remainingtext
+                            break
+                    # tabs = "\t"  # * (count / 10)
+                    # newtext += tabs + question.mark
+                    elem = ListItem()
+                    p = P(stylename=questionstyle)
+                    teletype.addTextToElement(p, newtext)
+                    elem.addElement(p)
+                    partlist.addElement(elem)
         textdoc.save("/tmp/" + filename + ".odt")
         qpinfile = open('/tmp/' + filename + '.odt')
         qpfile = File(qpinfile)
@@ -470,41 +479,24 @@ class GenerateQuestionPaper(View):
     def create_qp_dataset(self, subject, exam, totalmarks, time, criteria):
         """Populates the dataset needed to generate a question paper. Invokes
         make_document() method"""
-        questions = {'Part A': {}, 'Part B': {}, 'Part C': {}}
+        questions = {'Part A': [], 'Part B': [], 'Part C': []}
         status = 0
         for trio in criteria:
             module = trio[0]
-            try:
-                mark = int(trio[1])
-            except:
-                mark = float(trio[1])
-            count = int(trio[2])
+            part = trio[1]
+            level = trio[2]
+            count = int(trio[3])
             questiontotallist = Question.objects.filter(
-                module=module, mark=mark)
+                module=module, part=part, level=level)
+            part = "Part " + part
             selectedquestions = self.select_random(
                 questiontotallist, count)
-            if subject.course == 'B.Tech':
-                if mark >= 10:
-                    part = 'Part C'
-                elif mark >= 4:
-                    part = 'Part B'
-                else:
-                    part = 'Part A'
-            elif subject.course == 'M.Tech':
-                if mark >= 10:
-                    part = 'Part B'
-                else:
-                    part = 'Part A'
-            if mark not in questions[part]:
-                questions[part][mark] = []
-            questions[part][mark] = questions[
-                part][mark] + selectedquestions
+            questions[part] = questions[part] + selectedquestions
         if questions:
             for part in questions:
-                for mark in questions[part]:
-                    for question in questions[part][mark]:
-                        exam.question_set.add(question)
-                        exam.save()
+                for question in questions[part]:
+                    exam.question_set.add(question)
+                    exam.save()
             status = 1
         path = self.make_document(subject, questions, exam, totalmarks, time)
         return status, path
@@ -526,15 +518,17 @@ class GenerateQuestionPaper(View):
                         subject_id=subject.id)
             exam.save()
         question_categories_set = QuestionFormSet(request.POST)
+        print question_categories_set
         if question_categories_set.is_valid():
             print("\n\n\n\n\n\n Form Data \n\n\n\n\n\n\n\n")
             question_criteria = []
             for form in question_categories_set.forms:
                 if form.is_valid():
                     module = form.cleaned_data['module']
-                    mark = form.cleaned_data['mark']
+                    part = form.cleaned_data['part']
+                    level = form.cleaned_data['level']
                     count = form.cleaned_data['count']
-                    question_criteria.append((module, mark, count))
+                    question_criteria.append((module, part, level, count))
             status, path = self.create_qp_dataset(subject, exam,
                                                   totalmarks, time,
                                                   question_criteria)

@@ -72,5 +72,6 @@ class QuestionPaperGenerateForm(forms.Form):
 
 class QuestionPaperCategoryForm(forms.Form):
     module = forms.CharField()
-    mark = forms.CharField()
+    part = forms.CharField()
+    level = forms.CharField()
     count = forms.CharField()
