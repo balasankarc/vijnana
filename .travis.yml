@@ -8,6 +8,7 @@ script:
     - "coverage run --source='.' manage.py test repository"
 before_install:
   - pip install codecov
+after_install:
   - python manage.py makemigrations
   - python manage.py migrate
 after_success:
