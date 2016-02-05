@@ -8,3 +8,4 @@ repository/uploads/*
 .coverage
 coverage.xml
 htmlcov
+environment/*
