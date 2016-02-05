@@ -2,7 +2,6 @@ django
 bcrypt
 django-nose
 openpyxl
-pylatex
 django-production-ready
 django_extensions
 odfpy
