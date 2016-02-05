@@ -1,3 +1,7 @@
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
+
 from django.views.generic import View
 from django.contrib import messages
 from django.forms.formsets import formset_factory
@@ -372,108 +376,66 @@ class GenerateQuestionPaper(View):
         return result
 
     def make_document(self, subject, questions, exam, marks, time):
-        """Create a document from the generated question set"""
+
+        print("Questions")
+        print(questions)
         today = datetime.today()
         filename = subject.name.replace(' ', '_') + '_' + \
             str(today.day) + str(today.month) + str(today.year)
-        textdoc = OpenDocumentText()
-        s = textdoc.styles
-        h1style = Style(name="Heading 1", family="paragraph")
-        h1style.addElement(ParagraphProperties(
-            attributes={'textalign': "center"}))
-        h1style.addElement(TextProperties(
-            attributes={'fontsize': "18pt", 'fontweight': "bold"}))
-        h2style = Style(name="Heading 2", family="paragraph")
-        h2style.addElement(ParagraphProperties(
-            attributes={'textalign': "center"}))
-        h2style.addElement(TextProperties(
-            attributes={'fontsize': "15pt", 'fontweight': "bold"}))
-        h3style = Style(name="Heading 3", family="paragraph")
-        h3style.addElement(ParagraphProperties(
-            attributes={'textalign': "center"}))
-        h3style.addElement(TextProperties(
-            attributes={'fontsize': "13pt", 'fontweight': "bold"}))
-        s.addElement(h1style)
-        s.addElement(h2style)
-        s.addElement(h3style)
 
-        # Adding tab-stop at 16cm  for questions
-        tabstops_style = TabStops()
-        tabstop_style = TabStop(position="16cm")
-        tabstops_style.addElement(tabstop_style)
-        questionpar = ParagraphProperties()
-        questionpar.addElement(tabstops_style)
-        questionstyle = Style(name="Question", family="paragraph")
-        questionstyle.addElement(questionpar)
-        s.addElement(questionstyle)
+        document = Document()
 
-        # Adding tab-stop at 14cm for Time-Marks
-        tabstops_style1 = TabStops()
-        tabstop_style1 = TabStop(position="15cm")
-        tabstops_style1.addElement(tabstop_style1)
-        markpar = ParagraphProperties()
-        markpar.addElement(tabstops_style1)
-        markstyle = Style(name="Mark", family="paragraph")
-        markstyle.addElement(markpar)
-        s.addElement(markstyle)
+        paragraph = document.add_paragraph()
+        paragraph_format = paragraph.paragraph_format
+        paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        paragraph_text = 'Adi Shankara Institute of Engineering and Technology'
+        run = paragraph.add_run(paragraph_text)
+        run.bold = True
+        font = run.font
+        font.name = 'Times New Roman'
+        font.size = Pt(14)
 
-        # Adding Numbered List
-        listhier = ListStyle(name="MyList")
-        level = 1
-        b = ListLevelStyleNumber(
-            level=str(level))
-        b.setAttribute('numsuffix', ".")
-        listhier.addElement(b)
-        b.addElement(ListLevelProperties(
-            minlabelwidth="%fcm" % (level - .2)))
+        paragraph = document.add_paragraph()
+        paragraph_format = paragraph.paragraph_format
+        paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        paragraph_text = exam.name
+        paragraph.add_run(paragraph_text)
 
-        s.addElement(listhier)
-        collegename = H(outlinelevel=1, stylename=h1style,
-                        text="Adi Shankara Institute of Engineering \
-                                and Technology")
-        textdoc.text.addElement(collegename)
-        subjectname = H(outlinelevel=1, stylename=h2style, text=subject)
-        textdoc.text.addElement(subjectname)
-        p = P(stylename=markstyle)
-        teletype.addTextToElement(
-            p, u"Time: " + time + "Hours\tMarks: " + marks + "\n")
-        textdoc.text.addElement(p)
+        paragraph = document.add_paragraph()
+        paragraph_format = paragraph.paragraph_format
+        paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        paragraph_text = subject.name
+        paragraph.add_run(paragraph_text)
+
+        paragraph = document.add_paragraph()
+        paragraph_format = paragraph.paragraph_format
+        length_of_marks = len(str(marks))
+        length_of_time = len(str(time))
+        number_of_spaces = 45 - \
+            (len('Marks : ') + length_of_marks + len('Time : ') + length_of_time)
+        paragraph_text = "Marks : " + \
+            str(marks) + " " * (115 - number_of_spaces) + "Time : " + str(time)
+        paragraph.add_run(paragraph_text)
         for part in ['Part A', 'Part B', 'Part C']:
+            count = 1
             if questions[part]:
-                print part
-                partname = H(outlinelevel=1, stylename=h3style, text=part)
-                textdoc.text.addElement(partname)
-                partlist = List(stylename=listhier)
-                textdoc.text.addElement(partlist)
+                paragraph = document.add_paragraph()
+                paragraph_format = paragraph.paragraph_format
+                paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                paragraph_text = part
+                run = paragraph.add_run(paragraph_text)
+                run.bold = True
                 for question in questions[part]:
-                    oldtext = question.text
-                    remainingtext = oldtext
-                    stripedtext = ""
-                    newtext = ""
-                    while True:
-                        if len(remainingtext) > 80:
-                            try:
-                                pos = remainingtext.index(' ', 75)
-                            except:
-                                pos = len(remainingtext) - \
-                                    remainingtext[::-1].index(' ')
-                            stripedtext = remainingtext[:pos] + "\n"
-                            remainingtext = remainingtext[pos + 1:]
-                            newtext += stripedtext
-                        else:
-                            newtext += remainingtext
-                            break
-                    # tabs = "\t"  # * (count / 10)
-                    # newtext += tabs + question.mark
-                    elem = ListItem()
-                    p = P(stylename=questionstyle)
-                    teletype.addTextToElement(p, newtext)
-                    elem.addElement(p)
-                    partlist.addElement(elem)
-        textdoc.save("/tmp/" + filename + ".odt")
-        qpinfile = open('/tmp/' + filename + '.odt')
+                    prefix = str(count) + ". "
+                    text = prefix + question.text
+                    paragraph = document.add_paragraph()
+                    paragraph_format = paragraph.paragraph_format
+                    paragraph.add_run(text)
+                    count = count + 1
+        document.save('/tmp/' + filename + '.docx')
+        qpinfile = open('/tmp/' + filename + '.docx')
         qpfile = File(qpinfile)
-        exam.questionpaper.save(filename + '.odt', qpfile)
+        exam.questionpaper.save(filename + '.docx', qpfile)
         return '/uploads/' + exam.questionpaper.url
 
     def create_qp_dataset(self, subject, exam, totalmarks, time, criteria):

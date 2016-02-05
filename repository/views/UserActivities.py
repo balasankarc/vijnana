@@ -147,7 +147,7 @@ class UserSubjects(View):
     status = 200
 
     def get(self, request, username):
-        if is_user_current_user(request):
+        if is_user_current_user(request, username):
             user = current_user(request)
             if user.status == 'teacher' or user.status == 'hod':
                 self.subject_list = user.teachingsubjects.all()
@@ -175,7 +175,7 @@ class UploadProfilePicture(View):
 
     def post(self, request, username):
         """Handles upload of profile picture by user."""
-        if not is_user_current_user(request):
+        if not is_user_current_user(request, username):
             self.error = 'You are not permitted to do this.'
             self.status = 405
             return render(request, 'error.html',
@@ -215,7 +215,7 @@ class UploadProfilePicture(View):
 
     def get(self, request, username):
         user = User.objects.get(username=username)
-        if not is_user_current_user(request):
+        if not is_user_current_user(request, username):
             self.error = 'You are not permitted to do this.'
             self.status = 405
             return render(request, 'error.html',
@@ -235,7 +235,7 @@ class CropProfilePicture(View):
 
     def get(self, request, username):
         user = User.objects.get(username=username)
-        if not is_user_current_user(request):
+        if not is_user_current_user(request, username):
             return render(request, 'error.html',
                           {
                               'error': 'You are not permitted to do this.'
@@ -246,7 +246,7 @@ class CropProfilePicture(View):
 
     def post(self, request, username):
         user = User.objects.get(username=username)
-        if not is_user_current_user(request):
+        if not is_user_current_user(request, username):
             return render(request, 'error.html',
                           {
                               'error': 'You are not permitted to do this.'
@@ -294,7 +294,7 @@ class EditUser(View):
     """Lets a user edit his/her profile."""
 
     def get(self, request, username):
-        if not is_user_current_user(request):
+        if not is_user_current_user(request, username):
             return render(request, 'error.html',
                           {
                               'error': 'You are not permitted to do this.'
@@ -304,7 +304,7 @@ class EditUser(View):
             return render(request, 'edit.html', {'user': user})
 
     def post(self, request, username):
-        if not is_user_current_user(request):
+        if not is_user_current_user(request, username):
             return render(request, 'error.html',
                           {
                               'error': 'You are not permitted to do this.'
