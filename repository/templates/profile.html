@@ -70,56 +70,62 @@
                 <h3 class="panel-title">User Resources</h3>
             </div>
             <div class="panel-body" style="padding-top:0px;">
-                <table class='table' style="margin-top:0">
-                    {% for resource in user.resource_set.all %}
-                    <tr style="margin-top:0">
-                        <td style="border:0px;border-bottom:1px solid">
-                            <a href="/resource/{{resource.id}}" style="font-size:20pt">
-                                {{resource.title}}
-                            </a>
-                            <br />
-                            <p style="font-size:small">
-                            <a href="/resource/{{resource.subject.id}}">{{resource.subject.name}}</a>
-                            <br />
-                            <p style="font-size:small">
-                            {{resource.subject.department.name}}
-                            </p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </table>
+
+                <div style="height:50%;overflow:auto">
+                    <table class='table' style="margin-top:0">
+                        {% for resource in user.resource_set.all %}
+                        <tr style="margin-top:0">
+                            <td style="border:0px;border-bottom:1px solid">
+                                <a href="/resource/{{resource.id}}" style="font-size:20pt">
+                                    {{resource.title}}
+                                </a>
+                                <br />
+                                <p style="font-size:small">
+                                <a href="/resource/{{resource.subject.id}}">{{resource.subject.name}}</a>
+                                <br />
+                                <p style="font-size:small">
+                                {{resource.subject.department.name}}
+                                </p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
             </div>
         </div>
+        {% endif %}
     </div>
     <div class="col-md-5">
-        {% if user.resource_set.all %}
+        {% if subject_list %}
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h3 class="panel-title">User Subjects</h3>
             </div>
             <div class="panel-body" style="padding-top:0px;">
-                <table class='table' style="margin-top:0">
-                    {% for subject in subject_list %}
-                    <tr style="margin-top:0">
-                        <td style="border:0px;border-bottom:1px solid">
-                            <a href="/subject/{{subject.id}}" style="font-size:20pt">
-                                {{subject.name}}
-                            </a>
-                            <br />
-                            <p style="font-size:small">
-                            <a href="/subject/{{resource.subject.id}}">{{subject.code}}</a>
-                            <br />
-                            <p style="font-size:small">
-                            {{subject.department.name}}
-                            </p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </table>
+
+                <div style="height:50%;overflow:auto">
+                    <table class='table' style="margin-top:0">
+                        {% for subject in subject_list %}
+                        <tr style="margin-top:0">
+                            <td style="border:0px;border-bottom:1px solid">
+                                <a href="/subject/{{subject.id}}" style="font-size:20pt">
+                                    {{subject.name}}
+                                </a>
+                                <br />
+                                <p style="font-size:small">
+                                <a href="/subject/{{resource.subject.id}}">{{subject.code}}</a>
+                                <br />
+                                <p style="font-size:small">
+                                {{subject.department.name}}
+                                </p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
             </div>
         </div>
         {% endif %}
     </div>
 </div>
-{% endif %}
 {% endblock %}

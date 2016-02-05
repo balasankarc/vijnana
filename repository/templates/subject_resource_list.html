@@ -26,9 +26,9 @@
                 {% if not is_hod %}
                 {% if not is_staff %}
                 {% if not subscription_status %}
-                <a href="/subject/{{subject.id}}/subscribe_me"><button class="btn btn-primary">Subscribe Me</button></a>
+                <a href="/subject/{{subject.id}}/subscribe"><button class="btn btn-primary">Subscribe Me</button></a>
                 {% else %}
-                <a href="/subject/{{subject.id}}/unsubscribe_me"><button class="btn btn-danger">Unsubscribe</button></a>
+                <a href="/subject/{{subject.id}}/unsubscribe"><button class="btn btn-danger">Unsubscribe</button></a>
                 {% endif %}
                 {% endif %}
                 {% else %}

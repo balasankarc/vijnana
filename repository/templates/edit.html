@@ -5,11 +5,6 @@
     {{error}}
 </div>
 {% endif %}
-{% if not user.username == request.session.user %}
-<div class="alert alert-danger">
-    You are not permitted to access this page.
-</div>
-{% else %}
 <div class="row">
     <div class="col-md-5">
         <div class="row">
@@ -33,13 +28,12 @@
         <form action="/user/{{user.username}}/edit/" method="post" class="form-signin" style="margin:0">
             {% csrf_token %}
             <h2 class="form-signin-heading">Edit User Details</h2>
-            <input id="name" type="text" name="name" value="{{ current_name }}" placeholder="Name" class="form-control" >
-            <textarea id="address" name="address" placeholder="Address" class="form-control"  multiline="true">{{current_address}}</textarea>
-            <input id="email" type="email" name="email" value="{{ current_email }}" placeholder="Email" class="form-control" >
-            <input id="bloodgroup" type="bloodgroup" name="bloodgroup" value="{{ current_bloodgroup }}" placeholder="Blood Group" class="form-control" >
+            <input id="name" type="text" name="name" value="{{ user.name }}" placeholder="Name" class="form-control" >
+            <textarea id="address" name="address" placeholder="Address" class="form-control"  multiline="true">{{user.profile.address}}</textarea>
+            <input id="email" type="email" name="email" value="{{ user.profile.email }}" placeholder="Email" class="form-control" >
+            <input id="bloodgroup" type="bloodgroup" name="bloodgroup" value="{{ user.profile.bloodgroup }}" placeholder="Blood Group" class="form-control" >
             <button type="submit" class="btn btn-primary form-control">Register</button>
         </form>
     </div>
 </div>
-{% endif %}
 {% endblock %}

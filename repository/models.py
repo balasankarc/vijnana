@@ -113,7 +113,9 @@ class Exam(models.Model):
 class Question(models.Model):
     text = models.CharField(max_length=5000, unique=True)
     module = models.IntegerField()
-    mark = models.CharField(max_length=10)
+    part = models.CharField(max_length=10)
+    co = models.CharField(max_length=10)
+    level = models.CharField(max_length=10)
     exam = models.ManyToManyField(Exam)
     subject = models.ForeignKey(Subject)
 

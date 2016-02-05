@@ -22,7 +22,6 @@ SECRET_KEY = 'yek$-t)4ep!k==66a-edkv0zc$oh!dx=sp#)ymh*ly9z@hky=!'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -86,14 +85,30 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-TEMPLATE_CONTEXT_PROCESSORS = ("django.contrib.auth.context_processors.auth",
-                               "django.core.context_processors.debug",
-                               "django.core.context_processors.i18n",
-                               "django.core.context_processors.media",
-                               "django.core.context_processors.static",
-                               "django.core.context_processors.tz",
-                               "django.core.context_processors.request",
-                               "django.contrib.messages.context_processors.messages")
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            # insert your TEMPLATE_DIRS here
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                # Insert your TEMPLATE_CONTEXT_PROCESSORS here or use this
+                # list if you haven't customized them:
+                "django.contrib.auth.context_processors.auth",
+                "django.core.context_processors.debug",
+                "django.core.context_processors.i18n",
+                "django.core.context_processors.media",
+                "django.core.context_processors.static",
+                "django.core.context_processors.tz",
+                "django.core.context_processors.request",
+                "django.contrib.messages.context_processors.messages",
+            ],
+            'debug': True,
+        },
+    },
+]
 
 MEDIA_ROOT = '/home/balasankarc/git/vijnana_django/vijnana/repository/uploads/'
 

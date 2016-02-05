@@ -20,7 +20,7 @@ function addNew()
     var j = ($('#qpform div.row').size());
     var i =j.toString();
     var scntDiv = $('#questionforms');
-    $('<div class="row"><div class="col-md-3"><select name="form-'+i+'-module" class="form-control"><option selected="selected">Select Module</option><option value="1">Module 1</option><option value="2">Module 2</option><option value="3">Module 3</option><option value="4">Module 4</option></select></div><div class="col-md-3"><input type ="text" name="form-'+i+'-mark" class="form-control" required placeholder="Mark"></div><div class="col-md-3"><input type="text" class="form-control" name="form-'+i+'-count" required placeholder="Number of questions"></div><div class="col-md-3" style="padding-top:1%"><a id="remove" class="remove" href="#" onclick="removeForm(this)">Remove</a></div></div>').appendTo(scntDiv);
+    $('<div class="row"><div class="col-md-2"><select name="form-'+i+'-module" class="form-control"><option selected="selected">Select Module</option><option value="1">Module 1</option><option value="2">Module 2</option><option value="3">Module 3</option><option value="4">Module 4</option></select></div><div class="col-md-2"><select name="form-'+i+'-part" class="form-control"><option selected="selected">Select Part</option><option value="A">Part A</option><option value="B">Part B</option><option value="C">Part C</option></select></div><div class="col-md-3"><select name="form-'+i+'-level" class="form-control"><option selected="selected">Select Level of Question</option><option value="Knowledge">Knowledge</option><option value="Comprehension">Comprehension</option><option value="Application">Application</option><option value="Analysis">Analysis</option><option value="Synthesis">Synthesis</option><option name="Evaluation">Evaluation</option></select></div><div class="col-md-3"><input type="text" class="form-control" name="form-'+i+'-count" required placeholder="Number of questions"></div><div class="col-md-2" style="padding-top:1%"><a id="remove" class="remove" href="#" onclick="removeForm(this)">Remove</a></div></div>').appendTo(scntDiv);
     $('#id_form-TOTAL_FORMS').val(j+1);
     $('#id_form-INITIAL_FORMS').val(j+1);
 
@@ -34,35 +34,36 @@ $(document).on('click', '.remove', function() {
     for(j = 0; j<forms.length; j++)
     {
         forms.get(j).children[0].children.item(0).name = 'form-'+j+'-module';
-        forms.get(j).children[1].children.item(0).name = 'form-'+j+'-mark';
-        forms.get(j).children[2].children.item(0).name = 'form-'+j+'-count';
+        forms.get(j).children[1].children.item(0).name = 'form-'+j+'-part';
+        forms.get(j).children[2].children.item(0).name = 'form-'+j+'-level';
+        forms.get(j).children[3].children.item(0).name = 'form-'+j+'-count';
     }
     $('#id_form-TOTAL_FORMS').val(i-1);
     $('#id_form-INITIAL_FORMS').val(i-1);
 });
 </script>
-{% if user not in subject.staff.all %}
-<div class="alert alert-danger">
-    You are not permitted to access this page
-</div>
-{% else %}
-<div class="row">
-    <div style="margin:0 auto">
-        <form action="/subject/{{subject.id}}/generate_questionpaper/" method="post" class="form-signin" style="width:100%;max-width:100%" enctype=multipart/form-data id='qpform'>
-            {% csrf_token %}
-            <h2 class="form-signin-heading">Generate Question Paper</h2>
-            <input type="text" id="examname" name="examname" class="form-control" placeholder="Exam Name" required>
-            <input type="text" id="totalmarks" name="totalmarks" class="form-control" placeholder="Total Marks" required>
-            <input type="text" id="time" name="time" class="form-control" placeholder="Time (in hours)" required>
-            <button type="button" onclick='addNew()' class='btn btn-success'>Add Question Type</button>
-            <br />
-            <br />
-            <div id="questionforms">
-                {{qpformset.management_form}}
-            </div>
-            <button type="submit" class="btn btn-primary form-control">Generate</button>
-        </form>
+    {% if user not in subject.staff.all %}
+    <div class="alert alert-danger">
+        You are not permitted to access this page
     </div>
-</div>
-{% endif %}
-{% endblock %}
+    {% else %}
+    <div class="row">
+        <div style="margin:0 auto">
+            <form action="/subject/{{subject.id}}/generate_questionpaper/" method="post" class="form-signin" style="width:100%;max-width:100%" enctype=multipart/form-data id='qpform'>
+                {% csrf_token %}
+                <h2 class="form-signin-heading">Generate Question Paper</h2>
+                <input type="text" id="examname" name="examname" class="form-control" placeholder="Exam Name" required>
+                <input type="text" id="totalmarks" name="totalmarks" class="form-control" placeholder="Total Marks" required>
+                <input type="text" id="time" name="time" class="form-control" placeholder="Time (in hours)" required>
+                <button type="button" onclick='addNew()' class='btn btn-success'>Add Question Type</button>
+                <br />
+                <br />
+                <div id="questionforms">
+                    {{qpformset.management_form}}
+                </div>
+                <button type="submit" class="btn btn-primary form-control">Generate</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    {% endblock %}
