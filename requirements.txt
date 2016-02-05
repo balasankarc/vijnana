@@ -1,8 +1,11 @@
 django
 bcrypt
 django-nose
-pillow
 openpyxl
 pylatex
 django-production-ready
-django-extensions
+django_extensions
+odfpy
+python-docx
+Pillow
+django-shell-plus
