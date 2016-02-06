@@ -1,13 +1,11 @@
-from django.views.generic import View
-from shared import current_user
-
-from django.shortcuts import render
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponseRedirect
+from django.shortcuts import render
+from django.views.generic import View
 
 from repository.forms import NewResourceForm, SearchForm
-
-from repository.models import User, Resource, Subject
-from django.core.exceptions import ObjectDoesNotExist
+from repository.models import Resource, Subject, User
+from shared import current_user
 
 
 class NewResource(View):
@@ -153,3 +151,4 @@ class SearchResource(View):
                       {
                           'error': self.error
                       }, status=self.status)
+

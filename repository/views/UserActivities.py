@@ -1,19 +1,19 @@
-from django.views.generic import View
-from shared import current_user, is_user_current_user
+import os
 
 import bcrypt
-from django.shortcuts import render
 from django.contrib import messages
-from django.http import HttpResponseRedirect
-
-from repository.forms import (SignInForm, EditProfileForm, SignUpForm,
-                              ProfilePictureUploadForm, ProfilePictureCropForm)
-from django.db import IntegrityError
-from django.core.files.images import get_image_dimensions
-from repository.models import User, Department, Profile
 from django.core.exceptions import ObjectDoesNotExist
-import os
+from django.core.files.images import get_image_dimensions
+from django.db import IntegrityError
+from django.http import HttpResponseRedirect
+from django.shortcuts import render
+from django.views.generic import View
 from PIL import Image
+
+from repository.forms import (EditProfileForm, ProfilePictureCropForm,
+                              ProfilePictureUploadForm, SignInForm, SignUpForm)
+from repository.models import Department, Profile, User
+from shared import current_user, is_user_current_user
 
 
 class UserSignIn(View):

@@ -1,33 +1,25 @@
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt
-
-from django.views.generic import View
-from django.contrib import messages
-from django.forms.formsets import formset_factory
-from shared import current_user, is_user_hod
-
-from django.shortcuts import render
-from django.http import HttpResponseRedirect
-
-from repository.forms import (NewSubjectForm, AssignOrRemoveStaffForm,
-                              QuestionBankUploadForm,
-                              QuestionPaperCategoryForm,
-                              QuestionPaperGenerateForm)
-
-from repository.models import User, Department, Subject, Question, Exam
-from django.core.exceptions import ObjectDoesNotExist
-from django.db import IntegrityError
-from openpyxl import load_workbook
 import random
 from datetime import datetime
 
-from odf.opendocument import OpenDocumentText
+from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
-from odf.style import (Style, TextProperties, ParagraphProperties,
-                       ListLevelProperties, TabStop, TabStops)
-from odf.text import H, P, List, ListItem, ListStyle, ListLevelStyleNumber
-from odf import teletype
+from django.db import IntegrityError
+from django.forms.formsets import formset_factory
+from django.http import HttpResponseRedirect
+from django.shortcuts import render
+from django.views.generic import View
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
+from openpyxl import load_workbook
+
+from repository.forms import (AssignOrRemoveStaffForm, NewSubjectForm,
+                              QuestionBankUploadForm,
+                              QuestionPaperCategoryForm,
+                              QuestionPaperGenerateForm)
+from repository.models import Department, Exam, Question, Subject, User
+from shared import current_user, is_user_hod
 
 
 class NewSubject(View):
@@ -502,3 +494,4 @@ class GenerateQuestionPaper(View):
                            'qpformset': question_categories_set,
                            'error': error,
                            'user': current_user(request)})
+
