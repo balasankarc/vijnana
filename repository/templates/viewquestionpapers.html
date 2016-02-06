@@ -1,0 +1,35 @@
+{% extends "master.html" %}
+{% load staticfiles%}
+{% block content %}
+{% if messages %}
+{% for message in messages %}
+{% if message.tags == "success" %}
+<div class="alert alert-success"> {{message}} </div>
+{% endif %}
+{% endfor %}
+{% endif %}
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h2><a href="/subject/{{subject.id}}">{{subject.name}}</a> - Previous Question Papers</h2>
+    </div>
+    <div class="row" style="margin-top:1%">
+        {% for exam in subject.exam_set.all%}
+            <div class="col-md-4" style="text-align:center">
+                <img alt="Subjectnote" src={% static "images/questionpaper.jpg" %} width="20%" />
+                <br />
+                <h3>{{ exam.name }}</h3>
+                <h4>Marks: {{exam.totalmarks}}</h4>
+                <h4>Time: {{exam.time}}</h4>
+                <h4>{{exam.created_at}}</h4>
+                <a href='/subjects/{{subject.id}}/questionpaper/{{exam.id}}'><button class="btn btn-primary">Questions</button></a>
+                <a href='/uploads/{{exam.questionpaper.url}}'><button class="btn btn-success">Download</button></a>
+                <a href='/uploads/{{exam.questionpaper.url}}'><button class="btn btn-primary">Summary</button></a>
+            </div>
+            {% if forloop.counter|divisibleby:3  %}
+                </div>
+                <div class="row">
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

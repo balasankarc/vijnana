@@ -1,0 +1,36 @@
+{% extends "master.html" %}
+{% load staticfiles%}
+{% block content %}
+{% if messages %}
+{% for message in messages %}
+{% if message.tags == "success" %}
+<div class="alert alert-success"> {{message}} </div>
+{% endif %}
+{% endfor %}
+{% endif %}
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h2><a href="/subject/{{subject.id}}">{{subject.name}}</a> - Questions</h2>
+    </div>
+    <table class='table table-bordered' style='width:100%;overflow-x:auto'>
+        <tr>
+            <th>Sl. Number</th>
+            <th>Question Text</th>
+            <th>Module</th>
+            <th>Part</th>
+            <th>Course Outcome</th>
+            <th>Level</th>
+        </tr>
+        {% for question in subject.question_set.all%}
+        <tr>
+            <td>{{question.id}}</td>
+            <td>{{question.text}}</td>
+            <td>{{question.module}}</td>
+            <td>{{question.part}}</td>
+            <td>{{question.co}}</td>
+            <td>{{question.level}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

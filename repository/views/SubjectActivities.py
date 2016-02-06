@@ -491,3 +491,45 @@ class GenerateQuestionPaper(View):
                            'qpformset': question_categories_set,
                            'error': error,
                            'user': request.user})
+
+
+class ViewQuestions(View):
+    '''
+    View available questions of a subject.
+    '''
+
+    def get(self, request, subject_id):
+        subject = Subject.objects.get(id=subject_id)
+        if not is_user_hod_or_teacher(request, subject):
+            self.error = 'You are not authorized to visit this page.'
+            self.status = 403
+            self.template = 'error.html'
+            return render(request, self.template,
+                          {
+                              'error': self.error
+                          }, status=self.status)
+        else:
+            return render(request, 'viewquestions.html',
+                          {'subject': subject,
+                           'user': request.user})
+
+
+class ViewQuestionpapers(View):
+    '''
+    View previously generated question papers.
+    '''
+
+    def get(self, request, subject_id):
+        subject = Subject.objects.get(id=subject_id)
+        if not is_user_hod_or_teacher(request, subject):
+            self.error = 'You are not authorized to visit this page.'
+            self.status = 403
+            self.template = 'error.html'
+            return render(request, self.template,
+                          {
+                              'error': self.error
+                          }, status=self.status)
+        else:
+            return render(request, 'viewquestionpapers.html',
+                          {'subject': subject,
+                           'user': request.user})

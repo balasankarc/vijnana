@@ -63,8 +63,12 @@
     </div>
 </div>
 <div class="row">
-    <div class="col-md-7">
         {% if user.resource_set.all %}
+        {% if subject_list %}
+            <div class="col-md-7">
+        {% else %}
+            <div class="col-md-12">
+        {% endif %}
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h3 class="panel-title">User Resources</h3>
@@ -93,10 +97,15 @@
                 </div>
             </div>
         </div>
-        {% endif %}
     </div>
-    <div class="col-md-5">
-        {% if subject_list %}
+    {% endif %}
+
+    {% if subject_list %}
+        {% if user.resource_set.all %}
+            <div class="col-md-5">
+        {% else %}
+            <div class="col-md-12">
+        {% endif %}
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h3 class="panel-title">User Subjects</h3>
@@ -125,7 +134,7 @@
                 </div>
             </div>
         </div>
-        {% endif %}
     </div>
+    {% endif %}
 </div>
 {% endblock %}

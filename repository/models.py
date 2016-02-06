@@ -96,6 +96,8 @@ class Exam(models.Model):
     time = models.CharField(max_length=10)
     subject = models.ForeignKey(Subject)
     questionpaper = models.FileField(upload_to=set_questionpapername)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
         return self.name
