@@ -10,7 +10,8 @@
 {% endif %}
 <div class='panel panel-default'>
     <div class='panel-heading'>
-        <h2><a href="/subject/{{subject.id}}">{{subject.name}}</a> - Questions</h2>
+        <h2><a href="/subject/{{subject.id}}">{{subject.name}}</a><br /></h2>
+        <h3>{{exam.name}} - Questions</h3>
     </div>
     <table class='table table-bordered' style='width:100%;overflow-x:auto'>
         <tr>
@@ -21,7 +22,7 @@
             <th>Course Outcome</th>
             <th>Level</th>
         </tr>
-        {% for question in subject.question_set.all%}
+        {% for question in exam.question_set.all%}
         <tr>
             <td>{{forloop.counter}}</td>
             <td>{{question.text}}</td>

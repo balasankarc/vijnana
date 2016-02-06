@@ -54,6 +54,8 @@ urlpatterns = [
         SubjectActivities.ViewQuestions.as_view()),
     url(r'subject/(?P<subject_id>[0-9]+)/questionpapers(/)?$',
         SubjectActivities.ViewQuestionpapers.as_view()),
+    url(r'subject/(?P<subject_id>[0-9]+)/questionpaper/(?P<exam_id>[0-9]+)(/)?$',
+        SubjectActivities.ViewAQuestionpaper.as_view()),
     url(r'^uploads/resources/(?P<path>.*)$',
         serve,
         {

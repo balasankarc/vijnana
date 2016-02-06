@@ -1,10 +1,5 @@
 {% extends "master.html" %}
 {% block content %}
-{% if not request.session.usertype == 'teacher' and not request.session.usertype == 'hod' %}
-<div class="alert alert-danger">
-    You don't have permission to access this page.
-</div>
-{% else %}
 {% if error %}
 <div class="alert alert-danger">
     {{error}}
@@ -33,5 +28,4 @@
         </form>
     </div>
 </div>
-{% endif %}
 {% endblock %}

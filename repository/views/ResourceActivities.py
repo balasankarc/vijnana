@@ -6,6 +6,8 @@ from django.views.generic import View
 from repository.forms import NewResourceForm, SearchForm
 from repository.models import Resource, Subject, User
 
+from shared import is_user_hod_or_teacher
+
 
 class NewResource(View):
     """Let's a new resource to be created"""
@@ -16,15 +18,14 @@ class NewResource(View):
         'Subject Note': 'subject_note',
         'Project Thesis': 'project_thesis',
         'Seminar Report': 'seminar_report',
-        'Previous Question Paper': 'previous_question_paper'
+        'Previous Question Paper': 'university_question_paper'
     }
     subject_list = Subject.objects.all()
     error = ""
     template = "newresource.html"
 
     def get(self, request):
-        user = request.user.is_authenticated()
-        if user:
+        if request.user.is_authenticated() and is_user_hod_or_teacher(request):
             return render(request, self.template,
                           {
                               'subject_list': self.subject_list,
@@ -37,8 +38,8 @@ class NewResource(View):
                           }, status=404)
 
     def post(self, request):
-        user = request.user.is_authenticated()
-        if user:
+        if request.user and request.user.is_authenticated():
+            user = request.user
             form = NewResourceForm(request.POST, request.FILES)
             if form.is_valid():
                 try:
@@ -46,8 +47,7 @@ class NewResource(View):
                     input_category = form.cleaned_data['category']
                     input_subject = Subject.objects.get(
                         id=form.cleaned_data['subject'])
-                    resource_uploader = User.objects.get(
-                        username=request.session['user'])
+                    resource_uploader = user
                     input_file = request.FILES['resourcefile']
                     resource = Resource(
                         title=input_title, category=input_category,
@@ -93,7 +93,7 @@ class GetResourcesOfType(View):
         'Subject Note': 'subject_note',
         'Project Thesis': 'project_thesis',
         'Seminar Report': 'seminar_report',
-        'Previous Question Paper': 'previous_question_paper'
+        'Previous Question Paper': 'university_question_paper'
     }
 
     def get(self, request, type_name):

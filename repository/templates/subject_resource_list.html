@@ -13,78 +13,92 @@
         <div class="row">
             <div class="col-md-6">
                 <h3 style="margin-top:0;margin-bottom:0">{{subject.name}}</h3>
+                <p>{{subject.description}}</p>
                 {% if has_staff %}
+                Staff:
                 <ul style="list-style-type:none;">
                     {% for staff in subject_staff_list %}
-                    <li><a href="/user/{{staff.username}}/">{{staff.name}}</a></li>
+                    <li><a href="/user/{{staff.username}}/">{{staff.first_name}} {{staff.last_name}}</a></li>
                     {% endfor %}
                 </ul>
                 {% endif %}
             </div>
             <div class="col-md-6" style="text-align:right;margin-top:0;margin-bottom:0">
                 {% if request.user.is_authenticated %}
-                    {% if request.user.profile.status == 'student' %}
-                            {% if not subscription_status %}
-                                <a href="/subject/{{subject.id}}/subscribe"><button class="btn btn-primary">Subscribe Me</button></a>
+                {% if request.user.profile.status == 'student' %}
+                {% if not subscription_status %}
+                <a href="/subject/{{subject.id}}/subscribe"><button class="btn btn-primary">Subscribe Me</button></a>
+                {% else %}
+                <a href="/subject/{{subject.id}}/unsubscribe"><button class="btn btn-danger">Unsubscribe</button></a>
+                {% endif %}
+                {% endif %}
+                {% if is_hod %}
+                <div class="btn-group">
+                    <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Staff Related Actions <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" style="text-align:center">
+                        <li><a href="/subject/{{subject.id}}/assign_staff">Add Staff</a></li>
+                        <li>
+                            {% if not has_staff %}
+                            Remove Staff
                             {% else %}
-                                <a href="/subject/{{subject.id}}/unsubscribe"><button class="btn btn-danger">Unsubscribe</button></a>
+                            <a href="/subject/{{subject.id}}/remove_staff">Remove Staff</a>
                             {% endif %}
-                    {% endif %}
-                    {% if is_hod %}
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Staff Related Actions <span class="caret"></span>
-                            </button>
-                            <ul class="dropdown-menu" style="text-align:center">
-                                <li><a href="/subject/{{subject.id}}/assign_staff">Add Staff</a></li>
-                                <li>
-                                    {% if not has_staff %}
-                                        Remove Staff
-                                    {% else %}
-                                        <a href="/subject/{{subject.id}}/remove_staff">Remove Staff</a>
-                                    {% endif %}
-                                </li>
-                            </ul>
-                        </div>
-                        <div style="margin:1%"></div>
-                    {% endif %}
-                    {% if is_hod or is_staff %}
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Exam Related Actions <span class="caret"></span>
-                            </button>
-                            <ul class="dropdown-menu" style="text-align:center">
-                                <li><a href="/subject/{{subject.id}}/upload_questionbank">Upload Question Bank</a></li>
-                                <li><a href="/subject/{{subject.id}}/generate_questionpaper">Generate Question Paper</a></li>
-                                <li><a href="/subject/{{subject.id}}/questions">View uploaded questions</a></li>
-                                <li><a href="/subject/{{subject.id}}/questionpapers">Previous question papers</a></li>
-                            </ul>
-                        </div>
-                    {% endif %}
+                        </li>
+                    </ul>
+                </div>
+                <div style="margin:1%"></div>
+                {% endif %}
+                {% if is_hod or is_staff %}
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Exam Related Actions <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" style="text-align:center">
+                        <li><a href="/subject/{{subject.id}}/upload_questionbank">Upload Question Bank</a></li>
+                        <li><a href="/subject/{{subject.id}}/generate_questionpaper">Generate Question Paper</a></li>
+                        <li><a href="/subject/{{subject.id}}/questions">View uploaded questions</a></li>
+                        <li><a href="/subject/{{subject.id}}/questionpapers">Previous question papers</a></li>
+                    </ul>
+                </div>
+                {% endif %}
                 {% endif %}
             </div>
         </div>
     </div>
-    <table class='table table-bordered'>
-        {% for resource in resource_list %}
-        <tr>
-            <td style="width:5%;border-right:0px;vertical-align:middle">
-                <a href="/resource/{{resource.id}}">
-                    <img alt="Presentation" src={% static "images/presentation.png" %} width="100%" />
-                </a>
-            </td>
-            <td style="border-left:0px">
-                <a href="/resource/{{resource.id}}" style="font-size:20pt">
-                    {{resource.title}}
-                </a>
-                <br />
-                <p style="font-size:small">
-                <a href="/user/{{resource.uploader.username}}">{{resource.uploader.name}}</a>
-                <br />
-                </p>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
 </div>
-{% endblock %}
+<div class="row">
+    {% for category,value in resource_list.items %}
+    <div class="col-md-6">
+        <div class='panel panel-default'>
+            <div class='panel-heading'>
+                {{category}}
+            </div>
+            <div class='panel-body'>
+                <div style="height:50%;overflow:auto">
+                <table class='table' style="margin-top:0;border:0px">
+                    {% for resource in value%}
+                    <tr>
+                        <td style="border:0px;border-bottom:1px solid">
+                            <a href="/resource/{{resource.id}}" style="font-size:20pt">
+                                {{resource.title}}
+                            </a>
+                            <br />
+                            <p style="font-size:small">
+                            <a href="/user/{{resource.uploader.username}}">{{resource.uploader.first_name}} {{resource.uploader.last_name}}</a>
+                            <br />
+                            </p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--{% if number_of_categories|add:forloop.counter|divisibleby:2 %}-->
+    <!--True-->
+    <!--{% endif %}-->
+    {% endfor %}
+    {% endblock %}

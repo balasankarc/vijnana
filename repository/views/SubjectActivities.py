@@ -67,9 +67,24 @@ class ViewSubject(View):
     status = 200
 
     def get(self, request, subject_id):
+        RESOURCE_TYPES = {
+            'presentation': 'Presentation',
+            'paper_publication': 'Paper Publication',
+            'subject_note': 'Subject Note',
+            'project_thesis': 'Project Thesis',
+            'seminar_report': 'Seminar Report',
+            'university_question_paper': 'Previous University Question Paper'
+        }
+
         try:
             subject = Subject.objects.get(id=subject_id)
-            resource_list = subject.resource_set.all()
+            resource_list = {}
+            for resource in subject.resource_set.all():
+                restype = RESOURCE_TYPES[resource.category]
+                if restype not in resource_list:
+                    resource_list[restype] = []
+                resource_list[restype].append(resource)
+            number_of_categories = len(resource_list) * -1
             subscription_status = True
             is_hod = False
             has_staff = False
@@ -91,7 +106,8 @@ class ViewSubject(View):
                               'is_hod': is_hod,
                               'is_staff': is_staff,
                               'has_staff': has_staff,
-                              'subject_staff_list': subject_staff_list
+                              'subject_staff_list': subject_staff_list,
+                              'number_of_categories': number_of_categories
                           })
         except ObjectDoesNotExist, e:
             print e
@@ -533,3 +549,33 @@ class ViewQuestionpapers(View):
             return render(request, 'viewquestionpapers.html',
                           {'subject': subject,
                            'user': request.user})
+
+
+class ViewAQuestionpaper(View):
+    '''
+    View questions in a question paper.
+    '''
+
+    def get(self, request, subject_id, exam_id):
+        subject = Subject.objects.get(id=subject_id)
+        if not is_user_hod_or_teacher(request, subject):
+            self.error = 'You are not authorized to visit this page.'
+            self.status = 403
+            self.template = 'error.html'
+            return render(request, self.template,
+                          {
+                              'error': self.error
+                          }, status=self.status)
+        exam = Exam.objects.get(id=exam_id)
+        if exam.subject != subject:
+            self.error = 'No such exam for this subject found.'
+            self.status = 404
+            self.template = 'error.html'
+            return render(request, self.template,
+                          {
+                              'error': self.error
+                          }, status=self.status)
+        return render(request, 'viewaquestionpaper.html',
+                      {'subject': subject,
+                       'exam': exam,
+                       'user': request.user})

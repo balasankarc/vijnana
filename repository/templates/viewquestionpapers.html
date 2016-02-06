@@ -21,7 +21,7 @@
                 <h4>Marks: {{exam.totalmarks}}</h4>
                 <h4>Time: {{exam.time}}</h4>
                 <h4>{{exam.created_at}}</h4>
-                <a href='/subjects/{{subject.id}}/questionpaper/{{exam.id}}'><button class="btn btn-primary">Questions</button></a>
+                <a href='/subject/{{subject.id}}/questionpaper/{{exam.id}}'><button class="btn btn-primary">Questions</button></a>
                 <a href='/uploads/{{exam.questionpaper.url}}'><button class="btn btn-success">Download</button></a>
                 <a href='/uploads/{{exam.questionpaper.url}}'><button class="btn btn-primary">Summary</button></a>
             </div>
