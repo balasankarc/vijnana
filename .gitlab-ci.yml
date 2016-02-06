@@ -2,6 +2,7 @@ before_script:
   - "apt-get update -qq && apt-get install -y -qq python-pip python-dev"
   - "pip install --upgrade cffi"
   - "pip install --upgrade -r requirements.txt"
+  - "pip install --upgrade coverage"
 test:
   script: 
     - "coverage run --source='.' manage.py test repository -v 2"
