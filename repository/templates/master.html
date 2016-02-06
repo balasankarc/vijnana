@@ -77,10 +77,10 @@
                         </div>
                         <div class='collapse navbar-collapse' id='bs-example-navbar-collapse-1'>
                             <ul class='nav navbar-nav navbar-left'>
-                                {% if request.session.usertype == 'teacher' or request.session.usertype == 'hod' %}
+                                {% if request.user.profile.status == 'hod' or request.user.profile.status ==  'teacher' %}
                                 <li><a href="/new_resource/"><span class='glyphicon glyphicon-plus'></span>Add Resource</a></li>
                                 {% endif %}
-                                {% if request.session.usertype == 'hod' %}
+                                {% if request.user.profile.status == 'hod' %}
                                 <li><a href="/new_subject/"><span class='glyphicon glyphicon-plus'></span>Add Subject</a></li>
                                 {% endif %}
                             </ul>
@@ -91,17 +91,17 @@
                                     </a>
                                 </li>
                                 <li>
-                                    {% if request.session.user %}
+                                    {% if request.user.is_authenticated %}
                                     <div class="dropdown" style="padding:4px;">
                                         <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="border:0px">
-                                            <span style="color:#428BCA">{{request.session.user}}</span>
+                                            <span style="color:#428BCA">{{request.user.username}}</span>
                                             <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-                                            <li><a href="/user/{{request.session.user}}/">Profile</a>
-                                                <li><a href="/user/{{request.session.user}}/subjects/">My Subjects</a></li>
+                                            <li><a href="/user/{{request.user.username}}/">Profile</a>
+                                                <li><a href="/user/{{request.user.username}}/subjects/">My Subjects</a></li>
                                             <li role="separator" class="divider"></li>
-                                            <li><a href="/sign_out/">SIgn Out</a></li>
+                                            <li><a href="/sign_out/">Sign Out</a></li>
                                         </ul>
                                     </div>
                                     {% else %}

@@ -26,9 +26,9 @@ class SearchForm(forms.Form):
 
 
 class AssignOrRemoveStaffForm(forms.Form):
-    user_ids = [(x.id, x.name)
+    user_ids = [(x.id, x.first_name + " " + x.last_name)
                 for x in User.objects.all()
-                if x.status == 'teacher' or x.status == 'hod']
+                if x.profile.status == 'teacher' or x.profile.status == 'hod']
     staffselect = forms.MultipleChoiceField(choices=user_ids)
 
 
@@ -54,7 +54,8 @@ class ProfilePictureCropForm(forms.Form):
 
 
 class EditProfileForm(forms.Form):
-    name = forms.CharField(required=True)
+    first_name = forms.CharField(required=True)
+    last_name = forms.CharField(required=True)
     address = forms.CharField(widget=forms.Textarea, required=False)
     email = forms.EmailField(required=False)
     bloodgroup = forms.CharField(required=False)

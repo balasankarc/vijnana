@@ -1,17 +1,17 @@
 from django.shortcuts import render
 from django.views.generic import View
 
-from shared import current_user
+from shared import is_user_hod_or_teacher
 
 
 class Home(View):
     """Displays home page"""
 
     def get(self, request):
-        user = current_user(request)
-        if user:
+        if request.user.is_authenticated():
+            user = request.user
             subject_list = []
-            if user.status == 'teacher' or user.status == 'hod':
+            if is_user_hod_or_teacher(request):
                 subject_list = user.teachingsubjects.all()
             else:
                 subject_list = user.subscribedsubjects.all()

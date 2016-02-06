@@ -22,44 +22,43 @@
                 {% endif %}
             </div>
             <div class="col-md-6" style="text-align:right;margin-top:0;margin-bottom:0">
-                {% if request.session.user %}
-                {% if not is_hod %}
-                {% if not is_staff %}
-                {% if not subscription_status %}
-                <a href="/subject/{{subject.id}}/subscribe"><button class="btn btn-primary">Subscribe Me</button></a>
-                {% else %}
-                <a href="/subject/{{subject.id}}/unsubscribe"><button class="btn btn-danger">Unsubscribe</button></a>
-                {% endif %}
-                {% endif %}
-                {% else %}
-                <div class="btn-group">
-                    <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Staff Related Actions <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" style="text-align:center">
-                        <li><a href="/subject/{{subject.id}}/assign_staff">Add Staff</a></li>
-                        <li>
-                            {% if not has_staff %}
-                            Remove Staff
+                {% if request.user.is_authenticated %}
+                    {% if request.user.profile.status == 'student' %}
+                            {% if not subscription_status %}
+                                <a href="/subject/{{subject.id}}/subscribe"><button class="btn btn-primary">Subscribe Me</button></a>
                             {% else %}
-                            <a href="/subject/{{subject.id}}/remove_staff">Remove Staff</a>
+                                <a href="/subject/{{subject.id}}/unsubscribe"><button class="btn btn-danger">Unsubscribe</button></a>
                             {% endif %}
-                        </li>
-                    </ul>
-                </div>
-                <div style="margin:1%"></div>
-                {% if is_hod or is_staff %}
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Exam Related Actions <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" style="text-align:center">
-                        <li><a href="/subject/{{subject.id}}/upload_questionbank">Upload Question Bank</a></li>
-                        <li><a href="/subject/{{subject.id}}/generate_questionpaper">Generate Question Paper</a></li>
-                    </ul>
-                </div>
-                {% endif %}
-                {% endif %}
+                    {% endif %}
+                    {% if is_hod %}
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Staff Related Actions <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" style="text-align:center">
+                                <li><a href="/subject/{{subject.id}}/assign_staff">Add Staff</a></li>
+                                <li>
+                                    {% if not has_staff %}
+                                        Remove Staff
+                                    {% else %}
+                                        <a href="/subject/{{subject.id}}/remove_staff">Remove Staff</a>
+                                    {% endif %}
+                                </li>
+                            </ul>
+                        </div>
+                        <div style="margin:1%"></div>
+                    {% endif %}
+                    {% if is_hod or is_staff %}
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Exam Related Actions <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" style="text-align:center">
+                                <li><a href="/subject/{{subject.id}}/upload_questionbank">Upload Question Bank</a></li>
+                                <li><a href="/subject/{{subject.id}}/generate_questionpaper">Generate Question Paper</a></li>
+                            </ul>
+                        </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>

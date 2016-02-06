@@ -1,6 +1,5 @@
 import os
-
-import bcrypt
+from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.images import get_image_dimensions
@@ -13,7 +12,7 @@ from PIL import Image
 from repository.forms import (EditProfileForm, ProfilePictureCropForm,
                               ProfilePictureUploadForm, SignInForm, SignUpForm)
 from repository.models import Department, Profile, User
-from shared import current_user, is_user_current_user
+from shared import is_user_current_user, is_user_hod_or_teacher
 
 
 class UserSignIn(View):
@@ -25,7 +24,7 @@ class UserSignIn(View):
     template = "signin.html"
 
     def get(self, request):
-        if 'user' in list(request.session.keys()):
+        if request.user.is_authenticated():
             # If user already logged in, redirect to homepage
             messages.success(request, "You are already signed in.")
             return HttpResponseRedirect('/')
@@ -33,8 +32,7 @@ class UserSignIn(View):
             return render(request, self.template)
 
     def post(self, request):
-        if 'user' in list(request.session.keys()):
-            # If user already logged in, redirect to homepage
+        if request.user.is_authenticated():
             messages.success(request, "You are already signed in.")
             return HttpResponseRedirect('/')
         form = SignInForm(request.POST)
@@ -43,14 +41,13 @@ class UserSignIn(View):
                 input_username = form.cleaned_data['username']
                 input_password_raw = form.cleaned_data['password']
                 input_password = input_password_raw.encode('utf-8')
-                user = User.objects.get(username=input_username)
-                self.username = user.username
-                self.password = user.password.encode('utf-8')
-                hashed_password = bcrypt.hashpw(input_password,
-                                                self.password)
-                if hashed_password == self.password:
-                    request.session['user'] = self.username
-                    request.session['usertype'] = user.status
+                user = authenticate(username=input_username,
+                                    password=input_password)
+                print user
+                if user is not None:
+                    if user.is_active:
+                        request.session['user'] = self.username
+                        login(request, user)
                 else:
                     raise ObjectDoesNotExist
             else:
@@ -62,7 +59,8 @@ class UserSignIn(View):
                               'error': self.error,
                               'username': self.username
                           })
-        except:
+        except Exception, e:
+            print e
             self.error = "Missing Field"
             return render(request, self.template,
                           {
@@ -77,7 +75,7 @@ class UserSignOut(View):
     def get(self, request):
         if 'user' in list(request.session.keys()):
             del request.session['user']
-            del request.session['usertype']
+            logout(request)
         return HttpResponseRedirect('/')
 
 
@@ -111,17 +109,13 @@ class UserSignUp(View):
                 input_password = input_password_raw.encode('utf-8')
                 input_name = form.cleaned_data['fullname']
                 input_department = form.cleaned_data['department']
-                password_hash = bcrypt.hashpw(input_password,
-                                              bcrypt.gensalt())
                 user = User(username=input_username,
-                            password=password_hash,
-                            name=input_name,
-                            department_id=input_department)
+                            password=input_password,
+                            first_name=input_name)
                 user.save()
-                profile = Profile(user=user)
+                profile = Profile(user=user, department=input_department)
                 profile.save()
-                request.session['user'] = input_username
-                request.session['usertype'] = user.status
+                login(username=input_username, password=input_password)
             else:
                 raise
         except IntegrityError:
@@ -130,7 +124,8 @@ class UserSignUp(View):
                           {
                               'error': self.error,
                           })
-        except:
+        except Exception, e:
+            print e
             self.error = "Missing field."
             return render(request, self.template,
                           {
@@ -148,8 +143,8 @@ class UserSubjects(View):
 
     def get(self, request, username):
         if is_user_current_user(request, username):
-            user = current_user(request)
-            if user.status == 'teacher' or user.status == 'hod':
+            user = request.user
+            if is_user_hod_or_teacher(request):
                 self.subject_list = user.teachingsubjects.all()
             else:
                 self.subject_list = user.subscribedsubjects.all()
@@ -175,7 +170,7 @@ class UploadProfilePicture(View):
 
     def post(self, request, username):
         """Handles upload of profile picture by user."""
-        if not is_user_current_user(request, username):
+        if not is_user_current_user(request):
             self.error = 'You are not permitted to do this.'
             self.status = 405
             return render(request, 'error.html',
@@ -184,18 +179,16 @@ class UploadProfilePicture(View):
                           }, status=self.status)
         else:
             user = User.objects.get(username=username)
-            try:
-                p = user.profile
-            except:
-                p = Profile(user_id=user.id)
-                p.save()
+            p = user.profile
+            p = Profile(user_id=user.id)
+            p.save()
             form = ProfilePictureUploadForm(request.POST, request.FILES)
             if form.is_valid():
                 try:
                     image = request.FILES['image']
                     w, h = get_image_dimensions(image)
                     if w < 200 or h < 200 or w > 1000 or h > 1000:
-                        error = """Image dimension should be between 500x500
+                        error = """Image dimension should be between 200x200
                         and 1000x1000"""
                         raise
                     if p.picture:
@@ -214,8 +207,8 @@ class UploadProfilePicture(View):
                               {'user': user})
 
     def get(self, request, username):
-        user = User.objects.get(username=username)
-        if not is_user_current_user(request, username):
+        if not request.user.is_authenticated() or \
+                not is_user_current_user(request, username):
             self.error = 'You are not permitted to do this.'
             self.status = 405
             return render(request, 'error.html',
@@ -224,7 +217,7 @@ class UploadProfilePicture(View):
                           }, status=self.status)
         else:
             return render(request, 'uploadprofilepicture.html',
-                          {'user': user})
+                          {'user': request.user})
 
 
 class CropProfilePicture(View):
@@ -234,23 +227,24 @@ class CropProfilePicture(View):
     status = 200
 
     def get(self, request, username):
-        user = User.objects.get(username=username)
-        if not is_user_current_user(request, username):
+        if not request.user.is_authenticated() or \
+                not is_user_current_user(request, username):
             return render(request, 'error.html',
                           {
                               'error': 'You are not permitted to do this.'
                           }, status=404)
         else:
             return render(request, 'cropprofilepicture.html',
-                          {'user': user})
+                          {'user': request.user})
 
     def post(self, request, username):
-        user = User.objects.get(username=username)
-        if not is_user_current_user(request, username):
+        if not request.user.is_authenticated() or \
+                not is_user_current_user(request, username):
             return render(request, 'error.html',
                           {
                               'error': 'You are not permitted to do this.'
                           }, status=404)
+        user = request.user
         if user.profile.picture:
             form = ProfilePictureCropForm(request.POST)
             if form.is_valid():
@@ -272,9 +266,10 @@ class UserProfile(View):
     def get(self, request, username):
         try:
             user = User.objects.get(username=username)
+            print user.profile.status
             subject_list = []
             if user:
-                if user.status == 'teacher' or user.status == 'hod':
+                if is_user_hod_or_teacher(request):
                     subject_list = user.teachingsubjects.all()
                 else:
                     subject_list = user.subscribedsubjects.all()
@@ -294,7 +289,7 @@ class EditUser(View):
     """Lets a user edit his/her profile."""
 
     def get(self, request, username):
-        if not is_user_current_user(request, username):
+        if request.user.username != username:
             return render(request, 'error.html',
                           {
                               'error': 'You are not permitted to do this.'
@@ -304,29 +299,34 @@ class EditUser(View):
             return render(request, 'edit.html', {'user': user})
 
     def post(self, request, username):
-        if not is_user_current_user(request, username):
+        if request.user.username != username:
             return render(request, 'error.html',
                           {
                               'error': 'You are not permitted to do this.'
                           }, status=404)
         else:
+
             user = User.objects.get(username=username)
             form = EditProfileForm(request.POST)
             try:
                 if form.is_valid():
                     print("Here")
                     print(form)
-                    name = form.cleaned_data['name'] or ""
+                    first_name = form.cleaned_data['first_name'] or ""
+                    last_name = form.cleaned_data['last_name'] or ""
                     address = form.cleaned_data['address'] or ""
                     email = form.cleaned_data['email'] or ""
                     bloodgroup = form.cleaned_data['bloodgroup'] or ""
-                    user.name = name
+                    user.first_name = first_name
+                    user.last_name = last_name
                     p = user.profile
                     p.address = address
-                    p.email = email
+                    user.email = email
                     p.bloodgroup = bloodgroup
                     p.save()
                     user.save()
                     return HttpResponseRedirect('/user/' + user.username)
+                else:
+                    print form
             except Exception:
-                return HttpResponseRedirect('/user/' + user.usernam)
+                return HttpResponseRedirect('/user/' + user.username)

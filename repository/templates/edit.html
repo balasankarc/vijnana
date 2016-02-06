@@ -28,11 +28,12 @@
         <form action="/user/{{user.username}}/edit/" method="post" class="form-signin" style="margin:0">
             {% csrf_token %}
             <h2 class="form-signin-heading">Edit User Details</h2>
-            <input id="name" type="text" name="name" value="{{ user.name }}" placeholder="Name" class="form-control" >
+            <input id="first_name" type="text" name="first_name" value="{{ user.first_name }}" placeholder="Name" class="form-control" >
+            <input id="last_name" type="text" name="last_name" value="{{ user.last_name }}" placeholder="Name" class="form-control" >
             <textarea id="address" name="address" placeholder="Address" class="form-control"  multiline="true">{{user.profile.address}}</textarea>
-            <input id="email" type="email" name="email" value="{{ user.profile.email }}" placeholder="Email" class="form-control" >
+            <input id="email" type="email" name="email" value="{{ user.email }}" placeholder="Email" class="form-control" >
             <input id="bloodgroup" type="bloodgroup" name="bloodgroup" value="{{ user.profile.bloodgroup }}" placeholder="Blood Group" class="form-control" >
-            <button type="submit" class="btn btn-primary form-control">Register</button>
+            <button type="submit" class="btn btn-primary form-control">Update</button>
         </form>
     </div>
 </div>

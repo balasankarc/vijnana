@@ -5,7 +5,6 @@ from django.views.generic import View
 
 from repository.forms import NewResourceForm, SearchForm
 from repository.models import Resource, Subject, User
-from shared import current_user
 
 
 class NewResource(View):
@@ -24,7 +23,7 @@ class NewResource(View):
     template = "newresource.html"
 
     def get(self, request):
-        user = current_user(request)
+        user = request.user.is_authenticated()
         if user:
             return render(request, self.template,
                           {
@@ -38,7 +37,7 @@ class NewResource(View):
                           }, status=404)
 
     def post(self, request):
-        user = current_user(request)
+        user = request.user.is_authenticated()
         if user:
             form = NewResourceForm(request.POST, request.FILES)
             if form.is_valid():
@@ -151,4 +150,3 @@ class SearchResource(View):
                       {
                           'error': self.error
                       }, status=self.status)
-

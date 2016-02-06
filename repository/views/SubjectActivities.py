@@ -19,7 +19,7 @@ from repository.forms import (AssignOrRemoveStaffForm, NewSubjectForm,
                               QuestionPaperCategoryForm,
                               QuestionPaperGenerateForm)
 from repository.models import Department, Exam, Question, Subject, User
-from shared import current_user, is_user_hod
+from shared import is_user_hod, is_user_hod_or_teacher
 
 
 class NewSubject(View):
@@ -44,11 +44,11 @@ class NewSubject(View):
                 input_credit = form.cleaned_data['credit']
                 input_course = form.cleaned_data['course']
                 input_semester = form.cleaned_data['semester']
-                input_department = current_user(request).department.id
+                input_department = request.user.department
                 subject = Subject(code=input_code, name=input_name,
                                   credit=input_credit, course=input_course,
                                   semester=input_semester,
-                                  department_id=input_department)
+                                  department=input_department)
                 subject.save()
                 return HttpResponseRedirect('/subject/' + str(subject.id))
         except IntegrityError:
@@ -77,15 +77,12 @@ class ViewSubject(View):
             subject_staff_list = subject.staff.all()
             if subject_staff_list:
                 has_staff = True
-            if 'user' in request.session:
-                user = current_user(request)
+            if request.user.is_authenticated():
+                user = request.user
                 if subject not in user.subscribedsubjects.all():
                     subscription_status = False
-                if user.status == 'hod' and \
-                        user.department == subject.department:
-                    is_hod = is_user_hod(request, subject)
-                if user in subject.staff.all():
-                    is_staff = True
+                is_hod = is_user_hod(request, subject)
+                is_staff = is_user_hod_or_teacher(request, subject)
             return render(request, 'subject_resource_list.html',
                           {
                               'subject': subject,
@@ -96,7 +93,8 @@ class ViewSubject(View):
                               'has_staff': has_staff,
                               'subject_staff_list': subject_staff_list
                           })
-        except ObjectDoesNotExist:
+        except ObjectDoesNotExist, e:
+            print e
             self.error = 'The subject you requested does not exist.'
             self.status = 404
             return render(request, 'error.html',
@@ -122,10 +120,10 @@ class SubscribeUser(View):
 
     def get(self, request, subject_id):
         try:
-            user = current_user(request)
-            if user:
+            user = request.user
+            if user.is_authenticated():
                 subject = Subject.objects.get(id=subject_id)
-                subject.students.add(current_user(request))
+                subject.students.add(user)
                 subject.save()
                 return HttpResponseRedirect('/subject/' + subject_id)
             else:
@@ -150,8 +148,8 @@ class UnsubscribeUser(View):
     def get(self, request, subject_id):
         try:
             subject = Subject.objects.get(id=subject_id)
-            if 'user' in request.session:
-                user = current_user(request)
+            if request.user.is_authenticated():
+                user = request.user
                 if user in subject.students.all():
                     subject.students.remove(user)
                     subject.save()
@@ -184,8 +182,7 @@ class AssignStaff(View):
         for department in Department.objects.all():
             staff_list[department.name] = [x for
                                            x in department.user_set.all()
-                                           if x.status == 'teacher' or
-                                           x.status == 'hod']
+                                           if is_user_hod_or_teacher(x)]
         return render(request, self.template,
                       {
                           'is_hod': is_hod,
@@ -200,8 +197,7 @@ class AssignStaff(View):
         for department in Department.objects.all():
             staff_list[department.name] = [x for
                                            x in department.user_set.all()
-                                           if x.status == 'teacher' or
-                                           x.status == 'hod']
+                                           if is_user_hod_or_teacher(x)]
         try:
             if is_hod:
                 form = AssignOrRemoveStaffForm(request.POST)
@@ -313,7 +309,7 @@ class UploadQuestionBank(View):
         subject = Subject.objects.get(id=subject_id)
         return render(request, 'upload_questionbank.html',
                       {'subject': subject,
-                       'user': current_user(request)})
+                       'user': request.user})
 
     def post(self, request, subject_id):
         subject = Subject.objects.get(id=subject_id)
@@ -331,12 +327,12 @@ class UploadQuestionBank(View):
                 return render(request, 'upload_questionbank.html',
                               {'subject': subject,
                                'error': 'Some problem with the file',
-                               'user': current_user(request)})
+                               'user': request.user})
         else:
             return render(request, 'upload_questionbank.html',
                           {'subject': subject,
                            'error': 'Some problem with the file',
-                           'user': current_user(request)})
+                           'user': request.user})
 
 
 class GenerateQuestionPaper(View):
@@ -351,7 +347,7 @@ class GenerateQuestionPaper(View):
                       {'subject': subject,
                        'qpformset': question_categories_set,
                        'error': error,
-                       'user': current_user(request)})
+                       'user': request.user})
 
     def select_random(self, itemlist, count):
         """Select n items randomly from a list. (Reservoir sampling)"""
@@ -401,12 +397,13 @@ class GenerateQuestionPaper(View):
 
         paragraph = document.add_paragraph()
         paragraph_format = paragraph.paragraph_format
-        length_of_marks = len(str(marks))
-        length_of_time = len(str(time))
-        number_of_spaces = 45 - \
-            (len('Marks : ') + length_of_marks + len('Time : ') + length_of_time)
+        # length_of_marks = len(str(marks))
+        # length_of_time = len(str(time))
+        number_of_spaces = 100
+        # number_of_spaces = 45 - \
+        # (len('Marks : ') + length_of_marks + len('Time : ') + length_of_time)
         paragraph_text = "Marks : " + \
-            str(marks) + " " * (115 - number_of_spaces) + "Time : " + str(time)
+            str(marks) + " " * number_of_spaces + "Time : " + str(time)
         paragraph.add_run(paragraph_text)
         for part in ['Part A', 'Part B', 'Part C']:
             count = 1
@@ -493,5 +490,4 @@ class GenerateQuestionPaper(View):
                           {'subject': subject,
                            'qpformset': question_categories_set,
                            'error': error,
-                           'user': current_user(request)})
-
+                           'user': request.user})

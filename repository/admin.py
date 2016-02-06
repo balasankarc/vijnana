@@ -1,9 +1,7 @@
 from django.contrib import admin
 
-from .models import (Department, Exam, Profile, Question, Resource, Subject,
-                     User)
+from .models import (Department, Exam, Profile, Question, Resource, Subject)
 
-admin.site.register(User)
 admin.site.register(Department)
 admin.site.register(Exam)
 admin.site.register(Profile)

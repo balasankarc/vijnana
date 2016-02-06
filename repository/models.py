@@ -2,6 +2,7 @@ import hashlib
 import os
 
 from django.db import models
+from django.contrib.auth.models import User
 
 
 def set_questionpapername(instance, filename):
@@ -50,23 +51,13 @@ class Department(models.Model):
         return self.name
 
 
-class User(models.Model):
-    username = models.CharField(max_length=25, unique=True)
-    password = models.CharField(max_length=100)
-    name = models.CharField(max_length=50)
-    status = models.CharField(max_length=20, default='student')
-    department = models.ForeignKey(Department)
-
-    def __unicode__(self):
-        return self.username
-
-
 class Profile(models.Model):
     user = models.OneToOneField(User)
+    department = models.ForeignKey(Department)
+    status = models.CharField(max_length=15)
     address = models.TextField()
     picture = models.ImageField(upload_to=set_profilepicturename, blank=True)
     bloodgroup = models.CharField(max_length=5)
-    email = models.EmailField(blank=True)
     phone = models.CharField(max_length=15)
 
     def __unicode__(self):
