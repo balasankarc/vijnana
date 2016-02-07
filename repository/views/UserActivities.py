@@ -73,8 +73,7 @@ class UserSignOut(View):
     """Handle sign-out action of user"""
 
     def get(self, request):
-        if 'user' in list(request.session.keys()):
-            del request.session['user']
+        if request.user and request.user.is_authenticated():
             logout(request)
         return HttpResponseRedirect('/')
 
@@ -107,15 +106,20 @@ class UserSignUp(View):
                 input_username = form.cleaned_data['username']
                 input_password_raw = form.cleaned_data['password']
                 input_password = input_password_raw.encode('utf-8')
-                input_name = form.cleaned_data['fullname']
+                input_first_name = form.cleaned_data['first_name']
+                input_last_name = form.cleaned_data['last_name']
                 input_department = form.cleaned_data['department']
-                user = User(username=input_username,
-                            password=input_password,
-                            first_name=input_name)
+                user = User.objects.create(username=input_username,
+                                           first_name=input_first_name,
+                                           last_name=input_last_name)
+                user.set_password(input_password)
                 user.save()
-                profile = Profile(user=user, department=input_department)
+                profile = Profile(user=user, department_id=input_department)
+                profile.status = 'student'
                 profile.save()
-                login(username=input_username, password=input_password)
+                user = authenticate(username=input_username,
+                                    password=input_password)
+                login(request, user)
             else:
                 raise
         except IntegrityError:
@@ -170,7 +174,7 @@ class UploadProfilePicture(View):
 
     def post(self, request, username):
         """Handles upload of profile picture by user."""
-        if not is_user_current_user(request):
+        if not is_user_current_user(request, username):
             self.error = 'You are not permitted to do this.'
             self.status = 405
             return render(request, 'error.html',
@@ -180,8 +184,6 @@ class UploadProfilePicture(View):
         else:
             user = User.objects.get(username=username)
             p = user.profile
-            p = Profile(user_id=user.id)
-            p.save()
             form = ProfilePictureUploadForm(request.POST, request.FILES)
             if form.is_valid():
                 try:

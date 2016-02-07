@@ -12,7 +12,8 @@
             <h2 class="form-signin-heading">Sign Up</h2>
             <input id="username" type="text" name="username" value="{{ input_username }}" placeholder="Username" class="form-control" required>
             <input id="password" type="password" name="password" placeholder="Password" class="form-control" required>
-            <input id="fullname" type="text" name="fullname" value="{{ input_name }}" placeholder="Name" class="form-control" required>
+            <input id="first_name" type="text" name="first_name" value="{{ input_first_name }}" placeholder="First Name" class="form-control" required>
+            <input id="last_name" type="text" name="last_name" value="{{ input_last_name }}" placeholder="Last Name" class="form-control" required>
             <select class="form-control" name='department' required>
                 <option selected="selected" value="">Department</option>
                 {% for department in department_list %}
