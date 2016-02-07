@@ -1,23 +1,18 @@
 from django.db import IntegrityError
 from django.test import TestCase
 
-from .models import Subject, User
-import bcrypt
+from .models import Subject, User, Profile
 
 
 class UserTests(TestCase):
 
     @classmethod
     def setUp(inp):
-        password = bcrypt.hashpw('testuser0', bcrypt.gensalt())
-        first_user = User(
-            username='testuser0', password=password, department_id=1)
+        first_user = User.objects.create(username='testuser0')
+        first_user.set_password('testuser0')
         first_user.save()
-
-    def test_user_department_not_null(self):
-        first_user = User(username='testuser1')
-        with self.assertRaises(IntegrityError):
-            first_user.save()
+        p = Profile.objects.create(user=first_user, department_id=1)
+        p.save()
 
     def test_user_signup_missing_field(self):
         response = self.client.post("/sign_up/",
@@ -27,25 +22,24 @@ class UserTests(TestCase):
         self.assertTemplateUsed(response, 'signup.html')
 
     def test_user_signup_and_signout_successfull(self):
-        response = self.client.post("/sign_up/",
-                                    {'username': 'testuser3',
-                                     'password': 'testuser3',
-                                     'fullname': 'Test User 3',
-                                     'department': '1'})
-        self.assertRedirects(response, '/')
-        self.assertEqual(self.client.session['user'], 'testuser3')
-        user = User.objects.get(id=2)
-        self.assertEqual(user.status, 'student')
-        response = self.client.get('/sign_out/')
-        self.assertRedirects(response, '/')
-        self.assertNotIn('user', self.client.session)
+        self.client.post("/sign_up/",
+                         {'username': 'testuser3',
+                          'password': 'testuser3',
+                          'first_name': 'Test',
+                          'last_name': 'User 3',
+                          'department': '1'})
+        user = User.objects.last()
+        self.assertEqual(int(self.client.session['_auth_user_id']), user.id)
+        self.assertEqual(user.profile.status, 'student')
+        self.client.get('/sign_out/')
+        self.assertNotIn('_auth_user_id', self.client.session)
 
     def test_signin_success(self):
         response2 = self.client.post("/sign_in/",
                                      {'username': 'testuser0',
                                       'password': 'testuser0'})
         self.assertRedirects(response2, '/')
-        self.assertEqual(self.client.session['user'], 'testuser0')
+        self.assertIn('_auth_user_id', self.client.session)
 
     def test_incorrect_signin(self):
         response2 = self.client.post("/sign_in/",
