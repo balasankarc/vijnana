@@ -1,0 +1,57 @@
+{% extends "master.html" %}
+{% load staticfiles%}
+{% block content %}
+{% if error %}
+<div class="alert alert-danger">
+    {{ error }}
+</div>
+{% else %}
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+                <h3 style="margin-top:0;margin-bottom:0">Subjects</h3>
+    </div>
+    <div class='panel-body'>
+        {% for department in departments %}
+        {% if department.subject_set.all %}
+        <div class='panel panel-default'>
+            <div class='panel-heading'>
+                <h4>{{department.name}}</h4>
+            </div>
+            <div class='panel-body'>
+                <table class='table'>
+                {% for subject in department.subject_set.all %}
+                    <tr>
+                        <td style="border-top:0;width:5%;border-right:0px;vertical-align:top;padding-top:2%">
+                            <a href="/subject/{{subject.id}}">{{subject.code}}
+                            </a>
+                        </td>
+                        <td style="border-top:0;border-left:0px;width:90%">
+                            <a href="/subject/{{subject.id}}" style="font-size:20pt">
+                                {{subject.name}}
+                            </a>
+                            <br />
+                            <p style="font-size:small">
+                            {{subject.department.name}}
+                            <br />
+                            </p>
+                        </td>
+                        {% if logged_in %}
+                                <td style="border-top:0;vertical-align:middle">
+                                    {% if not request.user in subject.students.all%}
+                                        <a href="/subject/{{subject.id}}/subscribe"><button class="btn btn-primary">Subscribe Me</button></a>
+                                    {% else %}
+                                        <a href="/subject/{{subject.id}}/unsubscribe"><button class="btn btn-danger">Unsubscribe Me</button></a>
+                                    {% endif %}
+                                </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </table> 
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

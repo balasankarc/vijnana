@@ -579,3 +579,17 @@ class ViewAQuestionpaper(View):
                       {'subject': subject,
                        'exam': exam,
                        'user': request.user})
+
+
+class ViewSubjects(View):
+    '''
+    List all subjects.
+    '''
+    def get(self, request):
+        departments = Department.objects.all()
+        logged_in = False
+        if request.user and request.user.is_authenticated():
+            logged_in = True
+        return render(request, 'viewsubjects.html',
+                      {'logged_in': logged_in,
+                       'departments': departments})
