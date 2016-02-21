@@ -27,7 +27,7 @@ select.multiselect + div.btn-group.open .multiselect-container{
                 {% for department,teachers in staff_list.items %}
                 <optgroup label="{{department}}">
                     {%for staff in teachers %}
-                    <option value="{{staff.id}}">{{staff.name}}</option>
+                    <option value="{{staff.id}}">{{staff.first_name}} {{staff.last_name}}</option>
                     {% endfor %}
                 </optgroup>
                 {% endfor %}

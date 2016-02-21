@@ -2,6 +2,15 @@ from django import forms
 from django.contrib.auth.models import User
 
 
+def get_user_ids():
+    try:
+        return [(x.id, x.first_name + " " + x.last_name)
+                for x in User.objects.all()
+                if x.profile.status == 'teacher' or x.profile.status == 'hod']
+    except:
+        return []
+
+
 class SignInForm(forms.Form):
     username = forms.CharField()
     password = forms.CharField()
@@ -27,9 +36,7 @@ class SearchForm(forms.Form):
 
 
 class AssignOrRemoveStaffForm(forms.Form):
-    user_ids = [(x.id, x.first_name + " " + x.last_name)
-                for x in User.objects.all()
-                if x.profile.status == 'teacher' or x.profile.status == 'hod']
+    user_ids = get_user_ids()
     staffselect = forms.MultipleChoiceField(choices=user_ids)
 
 
