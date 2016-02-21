@@ -1,7 +1,8 @@
 from django.db import IntegrityError
 from django.test import TestCase
 
-from .models import Subject, User, Profile
+from .models import Subject, Profile
+from django.contrib.auth.models import User
 
 
 class UserTests(TestCase):
