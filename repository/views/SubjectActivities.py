@@ -212,8 +212,8 @@ class AssignStaff(View):
         is_hod = is_user_hod(request, subject)
         staff_list = {}
         for department in Department.objects.all():
-            staff_list[department.name] = [x for
-                                           x in department.user_set.all()
+            staff_list[department.name] = [x.user for
+                                           x in department.profile_set.all()
                                            if is_user_hod_or_teacher(x)]
         try:
             if is_hod:

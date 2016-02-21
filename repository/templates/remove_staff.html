@@ -25,7 +25,7 @@ select.multiselect + div.btn-group.open .multiselect-container{
             <h2 class="form-signin-heading" style="text-align:center">Remove Staff from {{subject.name}}</h2>
             <select id="staffselect" name="staffselect" multiple="multiple">
                 {%for staff in staff_list %}
-                <option value="{{staff.id}}">{{staff.name}}</option>
+                <option value="{{staff.id}}">{{staff.first_name}} {{staff.last_name}}</option>
                 {% endfor %}
             </select>
             <button type="submit" class="btn btn-danger form-control">Remove Staff</button>
