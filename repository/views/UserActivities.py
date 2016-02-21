@@ -1,6 +1,8 @@
 import os
-from django.contrib.auth import authenticate, login, logout
+
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.images import get_image_dimensions
 from django.db import IntegrityError
@@ -11,7 +13,7 @@ from PIL import Image
 
 from repository.forms import (EditProfileForm, ProfilePictureCropForm,
                               ProfilePictureUploadForm, SignInForm, SignUpForm)
-from repository.models import Department, Profile, User
+from repository.models import Department, Profile
 from shared import is_user_current_user, is_user_hod_or_teacher
 
 

@@ -4,8 +4,7 @@ from django.shortcuts import render
 from django.views.generic import View
 
 from repository.forms import NewResourceForm, SearchForm
-from repository.models import Resource, Subject, User
-
+from repository.models import Resource, Subject
 from shared import is_user_hod_or_teacher
 
 

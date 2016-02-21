@@ -2,6 +2,7 @@ import random
 from datetime import datetime
 
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.db import IntegrityError
@@ -18,7 +19,7 @@ from repository.forms import (AssignOrRemoveStaffForm, NewSubjectForm,
                               QuestionBankUploadForm,
                               QuestionPaperCategoryForm,
                               QuestionPaperGenerateForm)
-from repository.models import Department, Exam, Question, Subject, User
+from repository.models import Department, Exam, Question, Subject
 from shared import is_user_hod, is_user_hod_or_teacher
 
 
