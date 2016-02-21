@@ -4,13 +4,13 @@ python:
 cache: pip
 env:
   - DJANGO_VERSION=1.7.9
-install: "pip install -r requirements.txt"
+install:
+  - "pip install -r requirements.txt"
+  - "pip install codecov"
+before_script:
+  - "python manage.py makemigrations"
+  - "python manage.py migrate"
 script: 
     - "coverage run --source='.' manage.py test repository -v 2"
-before_install:
-  - pip install codecov
-after_install:
-  - python manage.py makemigrations
-  - python manage.py migrate
 after_success:
   - codecov
