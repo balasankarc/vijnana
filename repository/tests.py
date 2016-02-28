@@ -35,6 +35,14 @@ class UserTests(TestCase):
         self.client.get('/sign_out/')
         self.assertNotIn('_auth_user_id', self.client.session)
 
+    def test_signin_form(self):
+        response2 = self.client.get("/sign_in/")
+        self.assertTemplateUsed(response2, 'signin.html')
+
+    def test_signup_form(self):
+        response2 = self.client.get("/sign_up/")
+        self.assertTemplateUsed(response2, 'signup.html')
+
     def test_signin_success(self):
         response2 = self.client.post("/sign_in/",
                                      {'username': 'testuser0',
@@ -48,11 +56,21 @@ class UserTests(TestCase):
                                       'password': 'testuser1'})
         self.assertTemplateUsed(response2, 'signin.html')
 
+    def test_incomplete_signin_form(self):
+        response2 = self.client.post("/sign_in/",
+                                     {'username': '',
+                                      'password': 'testuser1'})
+        self.assertTemplateUsed(response2, 'signin.html')
+
     def test_already_signedin(self):
         response2 = self.client.post("/sign_in/",
                                      {'username': 'testuser0',
                                       'password': 'testuser0'})
         response2 = self.client.get("/sign_in/")
+        self.assertRedirects(response2, '/')
+        response2 = self.client.post("/sign_in/",
+                                     {'username': 'testuser0',
+                                      'password': 'testuser0'})
         self.assertRedirects(response2, '/')
 
     def test_signup_already_signed_in(self):
@@ -61,6 +79,16 @@ class UserTests(TestCase):
                                       'password': 'testuser0'})
         response2 = self.client.get("/sign_up/")
         self.assertRedirects(response2, '/')
+        response2 = self.client.post("/sign_up/")
+        self.assertRedirects(response2, '/')
+
+    def test_username_uniqueness(self):
+        response2 = self.client.post("/sign_up/",
+                                     {'username': 'testuser4',
+                                      'password': 'testuser4',
+                                      'first_name': 'Test',
+                                      'last_name': 'User 4',
+                                      'department': '1'})
 
 
 class SubjectTests(TestCase):
