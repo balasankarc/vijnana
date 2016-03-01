@@ -25,8 +25,9 @@ def is_user_hod_or_teacher(request, subject=None):
     user = request.user
     if subject:
         if user.profile.department == subject.department:
-            if user.profile.status == 'hod' or \
-                    user.profile.status == 'teacher':
+            if user.profile.status == 'hod':
+                return True
+            elif subject in user.teachingsubjects.all():
                 return True
             else:
                 return False
