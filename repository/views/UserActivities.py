@@ -50,6 +50,7 @@ class UserSignIn(View):
                     if user.is_active:
                         request.session['user'] = self.username
                         login(request, user)
+                        return HttpResponseRedirect('/subject/' + str(user.teachingsubjects.first().id))
                 else:
                     raise ObjectDoesNotExist
             else:

@@ -51,54 +51,38 @@
                 <div style="margin:1%"></div>
                 {% endif %}
                 {% if is_hod or is_staff %}
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Exam Related Actions <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" style="text-align:center">
-                        <li><a href="/subject/{{subject.id}}/upload_questionbank">Upload Question Bank</a></li>
-                        <li><a href="/subject/{{subject.id}}/generate_questionpaper">Generate Question Paper</a></li>
-                        <li><a href="/subject/{{subject.id}}/questions">View uploaded questions</a></li>
-                        <li><a href="/subject/{{subject.id}}/questionpapers">Previous question papers</a></li>
-                    </ul>
-                </div>
+                <a href="/subject/{{subject.id}}/upload_questionbank"><button class="btn btn-primary">Upload Question Bank</button></a>
+                <a href="/subject/{{subject.id}}/generate_questionpaper"><button class="btn btn-primary">Generate Question Paper</button></a>
                 {% endif %}
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
-<div class="row">
-    {% for category,value in resource_list.items %}
-    <div class="col-md-6">
-        <div class='panel panel-default'>
-            <div class='panel-heading'>
-                {{category}}
-            </div>
-            <div class='panel-body'>
-                <div style="height:50%;overflow:auto">
-                <table class='table' style="margin-top:0;border:0px">
-                    {% for resource in value%}
-                    <tr>
-                        <td style="border:0px;border-bottom:1px solid">
-                            <a href="/resource/{{resource.id}}" style="font-size:20pt">
-                                {{resource.title}}
-                            </a>
-                            <br />
-                            <p style="font-size:small">
-                            <a href="/user/{{resource.uploader.username}}">{{resource.uploader.first_name}} {{resource.uploader.last_name}}</a>
-                            <br />
-                            </p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </table>
-                </div>
-            </div>
-        </div>
+<div class='panel panel-default'>
+    <div class='panel-heading'>
+        <h2>Uploaded Questions</h2>
     </div>
-    <!--{% if number_of_categories|add:forloop.counter|divisibleby:2 %}-->
-    <!--True-->
-    <!--{% endif %}-->
-    {% endfor %}
-    {% endblock %}
+    <table class='table table-bordered' style='width:100%;overflow-x:auto'>
+        <tr>
+            <th>Sl. Number</th>
+            <th>Question Text</th>
+            <th>Module</th>
+            <th>Part</th>
+            <th>Course Outcome</th>
+            <th>Level</th>
+        </tr>
+        {% for question in subject.question_set.all%}
+        <tr>
+            <td>{{forloop.counter}}</td>
+            <td>{{question.text}}</td>
+            <td>{{question.module}}</td>
+            <td>{{question.part}}</td>
+            <td>{{question.co}}</td>
+            <td>{{question.level}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}
